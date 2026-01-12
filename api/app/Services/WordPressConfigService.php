@@ -15,19 +15,29 @@ class WordPressConfigService
     public function __construct()
     {
         try {
-            // Get WordPress URL from request or use default
-            // Shared token from .env (minimal config needed for initial connection)
+            // Get WordPress URL from request (no .env dependency)
             $this->wordpressUrl = $this->getWordPressUrl();
+            // Get shared token from environment variable
             $this->sharedToken = env('WORDPRESS_SHARED_TOKEN', '');
             
             // Try to load cached config immediately (fast path)
-            $cached = Cache::get('heytrisha_wordpress_config');
-            if ($cached !== null) {
-                $this->config = $cached;
+            // Use try-catch to prevent errors if Cache is not available yet
+            try {
+                $cached = Cache::get('heytrisha_wordpress_config');
+                if ($cached !== null) {
+                    $this->config = $cached;
+                }
+            } catch (\Exception $cacheError) {
+                // Cache not available yet, that's okay - will fetch when needed
+                $this->config = null;
             }
         } catch (\Exception $e) {
             // Don't fail on constructor - will use fallback when needed
-            Log::warning("⚠️ WordPressConfigService constructor error: " . $e->getMessage());
+            try {
+                Log::warning("⚠️ WordPressConfigService constructor error: " . $e->getMessage());
+            } catch (\Exception $logError) {
+                // Log not available, that's okay
+            }
             $this->wordpressUrl = '';
             $this->sharedToken = '';
         }
@@ -38,14 +48,7 @@ class WordPressConfigService
      */
     private function getWordPressUrl()
     {
-        // Priority 1: Get from .env (for initial setup)
-        $url = env('WORDPRESS_CONFIG_URL', '');
-        
-        if (!empty($url)) {
-            return rtrim($url, '/');
-        }
-        
-        // Priority 2: Get from HTTP request (if available)
+        // Get from HTTP request (no .env dependency)
         if (!app()->runningInConsole()) {
             $request = request();
             if ($request && $request->hasHeader('Referer')) {
@@ -108,6 +111,15 @@ class WordPressConfigService
             return $this->config;
         }
 
+        // ✅ PRIORITY 1: Try to get from HTTP headers (when called via WordPress proxy)
+        // This is the fastest and most reliable method
+        $headerConfig = $this->getConfigFromHeaders();
+        if ($headerConfig !== null) {
+            Log::info("✅ Config loaded from HTTP headers (WordPress proxy)");
+            $this->config = $headerConfig;
+            return $this->config;
+        }
+
         // Try to get from cache first
         $cached = Cache::get('heytrisha_wordpress_config');
         if ($cached !== null) {
@@ -160,6 +172,42 @@ class WordPressConfigService
     }
 
     /**
+     * ✅ Get configuration from HTTP headers (injected by WordPress proxy)
+     * This is the fastest and most reliable method when called via proxy
+     */
+    private function getConfigFromHeaders()
+    {
+        // Check if WordPress injected the config via HTTP headers
+        if (isset($_SERVER['HTTP_X_WORDPRESS_OPENAI_KEY'])) {
+            return [
+                'openai_api_key' => $_SERVER['HTTP_X_WORDPRESS_OPENAI_KEY'] ?? '',
+                'database' => [
+                    'host' => $_SERVER['HTTP_X_WORDPRESS_DB_HOST'] ?? '127.0.0.1',
+                    'port' => $_SERVER['HTTP_X_WORDPRESS_DB_PORT'] ?? '3306',
+                    'name' => $_SERVER['HTTP_X_WORDPRESS_DB_NAME'] ?? '',
+                    'user' => $_SERVER['HTTP_X_WORDPRESS_DB_USER'] ?? '',
+                    'password' => $_SERVER['HTTP_X_WORDPRESS_DB_PASSWORD'] ?? '',
+                ],
+                'wordpress_api' => [
+                    'url' => $_SERVER['HTTP_X_WORDPRESS_API_URL'] ?? '',
+                    'user' => $_SERVER['HTTP_X_WORDPRESS_API_USER'] ?? '',
+                    'password' => $_SERVER['HTTP_X_WORDPRESS_API_PASSWORD'] ?? '',
+                ],
+                'woocommerce_api' => [
+                    'consumer_key' => $_SERVER['HTTP_X_WOOCOMMERCE_KEY'] ?? '',
+                    'consumer_secret' => $_SERVER['HTTP_X_WOOCOMMERCE_SECRET'] ?? '',
+                ],
+                'wordpress_info' => [
+                    'is_multisite' => false,
+                    'current_site_id' => 1,
+                ],
+            ];
+        }
+        
+        return null; // No headers found, try other methods
+    }
+
+    /**
      * ✅ Fallback to .env if WordPress fetch fails
      */
     private function getFallbackConfig()
@@ -178,6 +226,10 @@ class WordPressConfigService
                 'url' => env('WORDPRESS_API_URL', ''),
                 'user' => env('WORDPRESS_API_USER', ''),
                 'password' => env('WORDPRESS_API_PASSWORD', ''),
+            ],
+            'woocommerce_api' => [
+                'consumer_key' => env('WOOCOMMERCE_CONSUMER_KEY', ''),
+                'consumer_secret' => env('WOOCOMMERCE_CONSUMER_SECRET', ''),
             ],
         ];
     }
@@ -207,6 +259,30 @@ class WordPressConfigService
     {
         $config = $this->getConfig();
         return $config['wordpress_api'] ?? [];
+    }
+
+    /**
+     * ✅ Get WooCommerce API Config
+     */
+    public function getWooCommerceApiConfig()
+    {
+        $config = $this->getConfig();
+        return $config['woocommerce_api'] ?? [
+            'consumer_key' => '',
+            'consumer_secret' => '',
+        ];
+    }
+
+    /**
+     * ✅ Get WordPress site information (Multisite status and current site ID)
+     */
+    public function getWordPressInfo()
+    {
+        $config = $this->getConfig();
+        return $config['wordpress_info'] ?? [
+            'is_multisite' => false,
+            'current_site_id' => 1
+        ];
     }
 
     /**

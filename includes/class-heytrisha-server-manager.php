@@ -32,10 +32,32 @@ class HeyTrisha_Server_Manager
     }
 
     /**
+     * Check if we're on shared hosting
+     */
+    private function is_shared_hosting()
+    {
+        // Check if exec/proc_open are disabled
+        $disabled_functions = explode(',', ini_get('disable_functions'));
+        $disabled_functions = array_map('trim', $disabled_functions);
+        return in_array('exec', $disabled_functions) || 
+               in_array('proc_open', $disabled_functions) || 
+               !function_exists('exec') || 
+               !function_exists('proc_open');
+    }
+
+    /**
      * Check if the server is running
      */
     public function is_server_running()
     {
+        // On shared hosting, the API is always "running" via web server
+        if ($this->is_shared_hosting()) {
+            // Check if Laravel API is accessible via HTTP
+            $api_url = plugins_url('api/public/index.php', dirname(__FILE__) . '/heytrisha-woo.php');
+            $response = wp_remote_get($api_url, ['timeout' => 2]);
+            return !is_wp_error($response);
+        }
+        
         // Check if port is in use
         if ($this->is_port_in_use($this->api_port)) {
             return true;
@@ -57,6 +79,15 @@ class HeyTrisha_Server_Manager
      */
     public function start_server()
     {
+        // On shared hosting, server doesn't need to be "started"
+        if ($this->is_shared_hosting()) {
+            return [
+                'success' => true,
+                'message' => 'Shared hosting detected - API accessible via web server',
+                'info' => 'On shared hosting, the Laravel API is accessed via your web server (Apache/Nginx). No separate server process needed.'
+            ];
+        }
+        
         if ($this->is_server_running()) {
             return [
                 'success' => false,

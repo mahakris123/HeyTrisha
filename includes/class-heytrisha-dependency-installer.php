@@ -35,10 +35,19 @@ class HeyTrisha_Dependency_Installer
             'errors' => []
         ];
 
-        // Check prerequisites
+        // Check if we're in a shared hosting environment
+        if ($this->is_shared_hosting()) {
+            return $this->handle_shared_hosting();
+        }
+
+        // Check prerequisites (warnings only - don't block installation)
         $prerequisites = $this->check_prerequisites();
-        if (!$prerequisites['success']) {
-            return $prerequisites;
+        // Merge prerequisite messages/errors but don't fail installation
+        $results['messages'] = array_merge($results['messages'], $prerequisites['messages']);
+        if (!empty($prerequisites['errors'])) {
+            $results['messages'] = array_merge($results['messages'], array_map(function($error) {
+                return '⚠ ' . $error;
+            }, $prerequisites['errors']));
         }
 
         // Install Laravel dependencies
@@ -88,10 +97,9 @@ class HeyTrisha_Dependency_Installer
             'errors' => []
         ];
 
-        // Check PHP version
-        if (version_compare(PHP_VERSION, '8.1.0', '<')) {
-            $results['success'] = false;
-            $results['errors'][] = 'PHP 8.1 or higher is required. Current version: ' . PHP_VERSION;
+        // Check PHP version (Laravel 8 supports PHP 7.4.3+)
+        if (version_compare(PHP_VERSION, '7.4.3', '<')) {
+            $results['errors'][] = 'PHP 7.4.3 or higher is recommended. Current version: ' . PHP_VERSION . ' (Some features may not work)';
         } else {
             $results['messages'][] = '✓ PHP version check passed (' . PHP_VERSION . ')';
         }
@@ -99,11 +107,13 @@ class HeyTrisha_Dependency_Installer
         // Check if Composer is available
         $composer_path = $this->find_composer();
         if (!$composer_path) {
-            $results['success'] = false;
-            $results['errors'][] = 'Composer is not found. Please install Composer to install Laravel dependencies.';
+            $results['errors'][] = 'Composer is not found. Please install Composer to install Laravel dependencies. You can download it from https://getcomposer.org/';
         } else {
             $results['messages'][] = '✓ Composer found: ' . $composer_path;
         }
+        
+        // Don't fail installation if prerequisites are missing - just show warnings
+        // Installation can proceed, but dependencies won't be installed until prerequisites are met
 
         // Check if npm is available (optional for React)
         $npm_path = $this->find_npm();
@@ -154,6 +164,28 @@ class HeyTrisha_Dependency_Installer
     }
 
     /**
+     * Check if exec() function is available
+     * 
+     * @return bool
+     */
+    private function is_exec_enabled()
+    {
+        // Check if exec() function exists
+        if (!function_exists('exec')) {
+            return false;
+        }
+        
+        // Check if exec is disabled in php.ini
+        $disabled_functions = explode(',', ini_get('disable_functions'));
+        $disabled_functions = array_map('trim', $disabled_functions);
+        if (in_array('exec', $disabled_functions)) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
      * Check if a command exists
      * 
      * @param string $command
@@ -161,6 +193,12 @@ class HeyTrisha_Dependency_Installer
      */
     private function command_exists($command)
     {
+        // CRITICAL: Check if exec() is available before trying to use it
+        // On shared hosting, exec() is often disabled
+        if (!$this->is_exec_enabled()) {
+            return false;
+        }
+        
         $output = [];
         $return_var = 0;
         
@@ -190,6 +228,13 @@ class HeyTrisha_Dependency_Installer
             'messages' => [],
             'errors' => []
         ];
+
+        // Check if exec is available (required for running Composer)
+        if (!$this->is_exec_enabled()) {
+            $results['errors'][] = 'exec() function is disabled on this server (shared hosting)';
+            $results['messages'][] = '⚠ Cannot install dependencies automatically on shared hosting';
+            return $results;
+        }
 
         $composer_path = $this->find_composer();
         if (!$composer_path) {
@@ -262,32 +307,36 @@ class HeyTrisha_Dependency_Installer
             }
         }
 
-        // Generate Laravel app key
-        $php_path = $this->find_php();
-        if (!$php_path) {
-            $results['errors'][] = 'PHP executable not found';
-            $results['success'] = false;
-            return $results;
-        }
-
-        $artisan_path = $this->api_path . '/artisan';
-        if (!file_exists($artisan_path)) {
-            $results['messages'][] = '⚠ Laravel artisan not found, skipping key generation';
-            return $results;
-        }
-
-        $command = escapeshellcmd($php_path) . ' ' . escapeshellarg($artisan_path) . ' key:generate --force 2>&1';
+        // Generate Laravel app key programmatically (works even if exec is disabled)
+        $key_generated = $this->generate_app_key_programmatically($env_file);
         
-        $output = [];
-        $return_var = 0;
-        
-        @exec($command, $output, $return_var);
-        
-        if ($return_var === 0) {
+        if ($key_generated) {
             $results['messages'][] = '✓ Laravel application key generated';
         } else {
-            $results['messages'][] = '⚠ Could not generate Laravel key (may need manual configuration)';
-            // Don't fail - key can be generated later
+            // Try artisan command as fallback (only if exec is enabled)
+            if (!$this->is_exec_enabled()) {
+                $results['messages'][] = '⚠ Could not generate Laravel key (exec disabled on shared hosting)';
+            } else {
+                $php_path = $this->find_php();
+                if ($php_path) {
+                    $artisan_path = $this->api_path . '/artisan';
+                    if (file_exists($artisan_path)) {
+                        $command = escapeshellcmd($php_path) . ' ' . escapeshellarg($artisan_path) . ' key:generate --force 2>&1';
+                        $output = [];
+                        $return_var = 0;
+                        @exec($command, $output, $return_var);
+                        if ($return_var === 0) {
+                            $results['messages'][] = '✓ Laravel application key generated (via artisan)';
+                        } else {
+                            $results['messages'][] = '⚠ Could not generate Laravel key (may need manual configuration)';
+                        }
+                    } else {
+                        $results['messages'][] = '⚠ Laravel artisan not found, skipping key generation';
+                    }
+                } else {
+                    $results['messages'][] = '⚠ Could not generate Laravel key (PHP executable not found)';
+                }
+            }
         }
 
         return $results;
@@ -305,6 +354,12 @@ class HeyTrisha_Dependency_Installer
             'messages' => [],
             'errors' => []
         ];
+
+        // Check if exec is available (required for running npm)
+        if (!$this->is_exec_enabled()) {
+            $results['messages'][] = '⚠ npm unavailable on shared hosting - React dependencies skipped (React is loaded from CDN)';
+            return $results;
+        }
 
         $npm_path = $this->find_npm();
         if (!$npm_path) {
@@ -357,6 +412,12 @@ class HeyTrisha_Dependency_Installer
             'errors' => []
         ];
 
+        // Check if exec is available (required for running artisan)
+        if (!$this->is_exec_enabled()) {
+            $results['messages'][] = '⚠ Cannot run migrations on shared hosting (exec disabled)';
+            return $results;
+        }
+
         $php_path = $this->find_php();
         if (!$php_path) {
             $results['errors'][] = 'PHP executable not found';
@@ -395,6 +456,45 @@ class HeyTrisha_Dependency_Installer
         }
 
         return $results;
+    }
+
+    /**
+     * Generate APP_KEY programmatically (without artisan)
+     * 
+     * @param string $env_file Path to .env file
+     * @return bool
+     */
+    private function generate_app_key_programmatically($env_file)
+    {
+        if (!file_exists($env_file)) {
+            return false;
+        }
+        
+        $env_content = file_get_contents($env_file);
+        
+        // Check if APP_KEY already exists and is valid
+        if (preg_match('/^APP_KEY=base64:[A-Za-z0-9+\/]+={0,2}$/m', $env_content)) {
+            return true; // Key already exists
+        }
+        
+        // Generate a random 32-byte key and encode it as base64
+        $key = 'base64:' . base64_encode(random_bytes(32));
+        
+        // Replace or add APP_KEY
+        if (preg_match('/^APP_KEY=.*$/m', $env_content)) {
+            // Replace existing APP_KEY
+            $env_content = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY=' . $key, $env_content);
+        } else {
+            // Add APP_KEY after APP_NAME or at the beginning
+            if (preg_match('/^APP_NAME=.*$/m', $env_content)) {
+                $env_content = preg_replace('/^(APP_NAME=.*)$/m', '$1' . "\n" . 'APP_KEY=' . $key, $env_content);
+            } else {
+                $env_content = 'APP_KEY=' . $key . "\n" . $env_content;
+            }
+        }
+        
+        // Write back to file
+        return file_put_contents($env_file, $env_content) !== false;
     }
 
     /**
@@ -441,6 +541,77 @@ class HeyTrisha_Dependency_Installer
         }
 
         return $status;
+    }
+
+    /**
+     * Detect if we're in a shared hosting environment
+     * 
+     * @return bool
+     */
+    private function is_shared_hosting()
+    {
+        // Check if Composer is not available AND exec is disabled
+        $composer_available = $this->find_composer() !== false;
+        $exec_disabled = !function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))));
+        
+        // If dependencies already exist, not shared hosting issue
+        if (is_dir($this->api_path . '/vendor')) {
+            return false;
+        }
+        
+        return !$composer_available || $exec_disabled;
+    }
+
+    /**
+     * Handle shared hosting environment
+     * 
+     * @return array
+     */
+    private function handle_shared_hosting()
+    {
+        $results = [
+            'success' => true,
+            'messages' => [],
+            'errors' => []
+        ];
+
+        $results['messages'][] = '🌐 Shared Hosting Environment Detected';
+        $results['messages'][] = '';
+        $results['messages'][] = 'This plugin requires Laravel dependencies (vendor folder) to be pre-installed.';
+        $results['messages'][] = '';
+        $results['messages'][] = '📋 Installation Instructions for Shared Hosting:';
+        $results['messages'][] = '';
+        $results['messages'][] = '1. Download the COMPLETE plugin package from:';
+        $results['messages'][] = '   https://github.com/mahakris123/HeyTrisha/releases';
+        $results['messages'][] = '';
+        $results['messages'][] = '2. OR, if you have a local development environment:';
+        $results['messages'][] = '   a. Copy the plugin folder to your local machine';
+        $results['messages'][] = '   b. Open terminal/command prompt in the plugin folder';
+        $results['messages'][] = '   c. Run the preparation script:';
+        $results['messages'][] = '      Windows: prepare-for-hosting.bat';
+        $results['messages'][] = '      Mac/Linux: ./prepare-for-hosting.sh';
+        $results['messages'][] = '   d. Upload the ENTIRE plugin folder (including vendor) back to your shared hosting';
+        $results['messages'][] = '';
+        $results['messages'][] = '3. Configure the plugin settings in WordPress admin';
+        $results['messages'][] = '';
+        $results['messages'][] = '💡 Note: The plugin will work once the vendor folder is present in:';
+        $results['messages'][] = '   wp-content/plugins/heytrisha-woo/api/vendor/';
+        $results['messages'][] = '';
+        $results['messages'][] = '📖 For detailed instructions, see: SHARED_HOSTING_SETUP.md';
+        $results['messages'][] = '';
+        
+        // Check if .env exists and has APP_KEY
+        $env_file = $this->api_path . '/.env';
+        if (!file_exists($env_file)) {
+            $results['messages'][] = '⚠ Also need to create .env file in api folder (copy from .env.example)';
+        } else {
+            $env_content = file_get_contents($env_file);
+            if (strpos($env_content, 'APP_KEY=base64:') === false) {
+                $results['messages'][] = '⚠ Also need to generate APP_KEY in .env file';
+            }
+        }
+
+        return $results;
     }
 }
 

@@ -18,11 +18,16 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         ]);
         const [inputText, setInputText] = React.useState("");
-        const [isMinimized, setIsMinimized] = React.useState(false);
+        const [isMinimized, setIsMinimized] = React.useState(true);
         const [isTyping, setIsTyping] = React.useState(false);
         const [pendingConfirmation, setPendingConfirmation] = React.useState(null);
+        const [currentChatId, setCurrentChatId] = React.useState(null);
         const messagesEndRef = React.useRef(null);
         const inputRef = React.useRef(null);
+        
+        // Get REST API config
+        const restUrl = (window.heytrishaConfig && window.heytrishaConfig.restUrl) || '';
+        const wpRestNonce = (window.heytrishaConfig && window.heytrishaConfig.wpRestNonce) || '';
 
         // Auto-scroll to bottom when new message arrives
         React.useEffect(() => {
@@ -35,6 +40,212 @@ document.addEventListener("DOMContentLoaded", function () {
                 inputRef.current.focus();
             }
         }, [isMinimized]);
+        
+        // Auto-start server when chatbot component mounts
+        React.useEffect(() => {
+            // Check if server is running and start if needed (only for non-shared hosting)
+            const isSharedHosting = (window.heytrishaConfig && window.heytrishaConfig.isSharedHosting) || false;
+            if (!isSharedHosting) {
+                startServerIfNeeded();
+            }
+        }, []);
+        
+        // Start server if not running
+        const startServerIfNeeded = async () => {
+            try {
+                const ajaxUrl = (window.heytrishaConfig && window.heytrishaConfig.ajaxurl) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+                const serverNonce = (window.heytrishaConfig && window.heytrishaConfig.serverNonce) || '';
+                
+                const response = await fetch(ajaxUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'heytrisha_start_server',
+                        nonce: serverNonce
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ Server started successfully');
+                    return true;
+                } else {
+                    console.log('ℹ️ Server status:', result.data?.message || 'Unknown');
+                    return false;
+                }
+            } catch (error) {
+                console.warn('⚠️ Could not check/start server:', error);
+                return false;
+            }
+        };
+        
+        // Create or load chat when chatbot opens
+        React.useEffect(() => {
+            if (!isMinimized && !currentChatId && restUrl && wpRestNonce) {
+                createOrLoadChat();
+            }
+        }, [isMinimized]);
+        
+        // Create or load chat
+        const createOrLoadChat = async () => {
+            if (!restUrl || !wpRestNonce) return;
+            
+            try {
+                // Try to get the most recent active chat
+                const chatsResponse = await fetch(`${restUrl}chats?archived=false`, {
+                    headers: {
+                        'X-WP-Nonce': wpRestNonce
+                    }
+                });
+                const chats = await chatsResponse.json();
+                
+                if (chats && chats.length > 0 && !chats.code) {
+                    // Load the most recent chat
+                    const recentChat = chats[0];
+                    setCurrentChatId(recentChat.id);
+                    loadChatMessages(recentChat.id);
+                } else {
+                    // Create new chat
+                    const createResponse = await fetch(`${restUrl}chats`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-WP-Nonce': wpRestNonce
+                        },
+                        body: JSON.stringify({ title: 'Chat Widget' })
+                    });
+                    const newChat = await createResponse.json();
+                    if (newChat && !newChat.code) {
+                        setCurrentChatId(newChat.id);
+                        setMessages([{
+                            sender: "bot",
+                            text: "Hello! 👋 I'm Trisha, your AI assistant. How can I help you today?",
+                            timestamp: new Date()
+                        }]);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to create/load chat:', error);
+            }
+        };
+        
+        // Load chat messages
+        const loadChatMessages = async (chatId) => {
+            if (!restUrl || !wpRestNonce) return;
+            
+            try {
+                const response = await fetch(`${restUrl}chats/${chatId}`, {
+                    headers: {
+                        'X-WP-Nonce': wpRestNonce
+                    }
+                });
+                const chat = await response.json();
+                if (chat && !chat.code && chat.messages) {
+                    // Convert database messages to chatbot format
+                    const formattedMessages = chat.messages.map(msg => {
+                        const messageObj = {
+                            sender: msg.role === 'user' ? 'user' : 'bot',
+                            text: msg.content,
+                            timestamp: new Date(msg.created_at)
+                        };
+                        
+                        // Extract formattedData from metadata if it exists
+                        if (msg.metadata && msg.metadata.formattedData) {
+                            messageObj.formattedData = msg.metadata.formattedData;
+                        } else if (msg.metadata && typeof msg.metadata === 'object') {
+                            // Try to extract formattedData from metadata object
+                            try {
+                                // Check if metadata has formattedData
+                                if (msg.metadata.formattedData) {
+                                    messageObj.formattedData = typeof msg.metadata.formattedData === 'string' 
+                                        ? JSON.parse(msg.metadata.formattedData) 
+                                        : msg.metadata.formattedData;
+                                }
+                            } catch (e) {
+                                // Ignore parsing errors
+                            }
+                        }
+                        
+                        // If content contains JSON at the end, try to extract it
+                        if (!messageObj.formattedData && msg.content && msg.content.includes('{')) {
+                            try {
+                                const jsonMatch = msg.content.match(/\{[\s\S]*\}$/);
+                                if (jsonMatch) {
+                                    const parsed = JSON.parse(jsonMatch[0]);
+                                    if (parsed.type && (parsed.type === 'table' || parsed.type === 'details' || parsed.type === 'card')) {
+                                        messageObj.formattedData = parsed;
+                                        // Remove JSON from text
+                                        messageObj.text = msg.content.replace(/\s*\{[\s\S]*\}$/, '').trim();
+                                    }
+                                }
+                            } catch (e) {
+                                // Ignore parsing errors
+                            }
+                        }
+                        
+                        return messageObj;
+                    });
+                    setMessages(formattedMessages.length > 0 ? formattedMessages : [{
+                        sender: "bot",
+                        text: "Hello! 👋 I'm Trisha, your AI assistant. How can I help you today?",
+                        timestamp: new Date()
+                    }]);
+                }
+            } catch (error) {
+                console.error('Failed to load chat messages:', error);
+            }
+        };
+        
+        // Save message to database
+        const saveMessageToDatabase = async (role, content, metadata = null) => {
+            if (!currentChatId || !restUrl || !wpRestNonce) return;
+            
+            try {
+                await fetch(`${restUrl}chats/${currentChatId}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': wpRestNonce
+                    },
+                    body: JSON.stringify({
+                        role: role,
+                        content: content,
+                        metadata: metadata
+                    })
+                });
+            } catch (error) {
+                console.error('Failed to save message to database:', error);
+            }
+        };
+        
+        // Update chat title if needed
+        const updateChatTitleIfNeeded = async (chatId, firstMessage) => {
+            if (!restUrl || !wpRestNonce) return;
+            
+            try {
+                // Check current chat title
+                const chatResponse = await fetch(`${restUrl}chats/${chatId}`, {
+                    headers: {
+                        'X-WP-Nonce': wpRestNonce
+                    }
+                });
+                const chat = await chatResponse.json();
+                if (chat && !chat.code && (chat.title === 'Chat Widget' || chat.title === 'New Chat')) {
+                    const newTitle = firstMessage.substring(0, 50);
+                    await fetch(`${restUrl}chats/${chatId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-WP-Nonce': wpRestNonce
+                        },
+                        body: JSON.stringify({ title: newTitle })
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to update chat title:', error);
+            }
+        };
 
         // ✅ Enhanced response formatting
         const formatResponse = (data) => {
@@ -99,6 +310,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // ✅ Render formatted message content
         const renderMessageContent = (formattedData) => {
+            // Handle case where formattedData might be a JSON string
+            if (typeof formattedData === "string") {
+                try {
+                    formattedData = JSON.parse(formattedData);
+                } catch (e) {
+                    // If it's not JSON, treat as text content
+                    return React.createElement("div", { 
+                        style: { 
+                            whiteSpace: "pre-wrap", 
+                            lineHeight: "1.6",
+                            wordBreak: "break-word"
+                        } 
+                    }, formattedData);
+                }
+            }
+            
             if (!formattedData || formattedData.type === "text") {
                 return React.createElement("div", { 
                     style: { 
@@ -111,17 +338,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (formattedData.type === "table") {
                 const maxRows = 15;
-                const displayData = formattedData.content.slice(0, maxRows);
+                const displayData = Array.isArray(formattedData.content) ? formattedData.content.slice(0, maxRows) : [];
                 
                 return React.createElement("div", { style: { marginTop: "12px" } },
-                    React.createElement("div", { 
+                    formattedData.summary && React.createElement("div", { 
                         style: { 
                             marginBottom: "12px", 
                             fontWeight: "600", 
                             color: "#1e40af",
-                            fontSize: "13px"
+                            fontSize: "13px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px"
                         } 
-                    }, `📊 ${formattedData.summary}`),
+                    }, 
+                        React.createElement("span", null, "📊"),
+                        React.createElement("span", null, formattedData.summary)
+                    ),
                     React.createElement("div", {
                         style: {
                             maxHeight: "400px",
@@ -348,12 +581,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (!confirmed) {
                 console.log("✅ Sending message:", queryText);
-                setMessages(prevMessages => [...prevMessages, { 
+                const userMessage = { 
                     sender: "user", 
                     text: queryText,
                     timestamp: new Date()
-                }]);
-            setInputText("");
+                };
+                setMessages(prevMessages => [...prevMessages, userMessage]);
+                setInputText("");
+                
+                // Save user message to database
+                if (currentChatId) {
+                    saveMessageToDatabase('user', queryText);
+                    // Update chat title if it's still "Chat Widget"
+                    updateChatTitleIfNeeded(currentChatId, queryText);
+                } else if (restUrl && wpRestNonce) {
+                    // Create chat first if it doesn't exist
+                    try {
+                        const createResponse = await fetch(`${restUrl}chats`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-WP-Nonce': wpRestNonce
+                            },
+                            body: JSON.stringify({ title: queryText.substring(0, 50) })
+                        });
+                        const newChat = await createResponse.json();
+                        if (newChat && !newChat.code) {
+                            setCurrentChatId(newChat.id);
+                            saveMessageToDatabase('user', queryText);
+                        }
+                    } catch (error) {
+                        console.error('Failed to create chat:', error);
+                    }
+                }
             }
             
             setIsTyping(true);
@@ -371,12 +631,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
 
+                // ✅ Use admin-ajax.php instead of REST API (hides endpoint from Network tab)
+                const ajaxUrl = (window.heytrishaConfig && window.heytrishaConfig.ajaxurl) || '/wp-admin/admin-ajax.php';
+                
+                console.log('🌐 Using admin-ajax.php (secure endpoint)');
+                
                 let response;
+                let retrySuccess = false;
                 try {
-                    response = await fetch("http://localhost:8000/api/query", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(requestBody),
+                    // ✅ Send request to admin-ajax.php with form-encoded data (WordPress standard)
+                    const formData = new FormData();
+                    formData.append('action', 'heytrisha_query');
+                    formData.append('endpoint', 'query');
+                    
+                    // Add query parameters as JSON string
+                    if (requestBody.query) {
+                        formData.append('query', requestBody.query);
+                    }
+                    if (requestBody.confirmed !== undefined) {
+                        formData.append('confirmed', requestBody.confirmed);
+                    }
+                    if (requestBody.confirmation_data) {
+                        formData.append('confirmation_data', JSON.stringify(requestBody.confirmation_data));
+                    }
+                    
+                    response = await fetch(ajaxUrl, {
+                        method: "POST",
+                        body: formData,
                         signal: controller.signal
                     });
                 } catch (fetchError) {
@@ -386,11 +667,69 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     // Check if it's a connection error (server not ready)
                     if (fetchError.message && (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError'))) {
-                        throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                        // Try to start the server automatically
+                        const isSharedHosting = (window.heytrishaConfig && window.heytrishaConfig.isSharedHosting) || false;
+                        if (!isSharedHosting) {
+                            console.log('🔄 Connection failed, attempting to start server...');
+                            try {
+                                const serverStarted = await startServerIfNeeded();
+                                if (serverStarted) {
+                                    // Wait a moment for server to start
+                                    await new Promise(resolve => setTimeout(resolve, 2000));
+                                    // Retry the request once with correct endpoint
+                                    console.log('🔄 Retrying request after server start...');
+                                    const retryController = new AbortController();
+                                    const retryTimeoutId = setTimeout(() => retryController.abort(), 20000);
+                                    
+                                    try {
+                                        // ✅ Retry with admin-ajax.php (form-encoded)
+                                        const retryFormData = new FormData();
+                                        retryFormData.append('action', 'heytrisha_query');
+                                        retryFormData.append('endpoint', 'query');
+                                        
+                                        if (requestBody.query) {
+                                            retryFormData.append('query', requestBody.query);
+                                        }
+                                        if (requestBody.confirmed !== undefined) {
+                                            retryFormData.append('confirmed', requestBody.confirmed);
+                                        }
+                                        if (requestBody.confirmation_data) {
+                                            retryFormData.append('confirmation_data', JSON.stringify(requestBody.confirmation_data));
+                                        }
+                                        
+                                        response = await fetch(ajaxUrl, {
+                                            method: 'POST',
+                                            body: retryFormData,
+                                            signal: retryController.signal
+                                        });
+                                        clearTimeout(retryTimeoutId);
+                                        
+                                        if (!response.ok) {
+                                            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                                        }
+                                        retrySuccess = true; // Mark retry as successful
+                                    } catch (retryError) {
+                                        clearTimeout(retryTimeoutId);
+                                        console.error('❌ Retry failed:', retryError);
+                                        throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                                    }
+                                } else {
+                                    throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                                }
+                            } catch (retryError) {
+                                console.error('❌ Server start/retry failed:', retryError);
+                                throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                            }
+                        } else {
+                            throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                        }
+                    } else {
+                        throw fetchError;
                     }
-                    throw fetchError;
                 }
-                clearTimeout(timeoutId);
+                if (!retrySuccess) {
+                    clearTimeout(timeoutId);
+                }
 
                 if (!response.ok) {
                     throw new Error(`Server error: ${response.status} ${response.statusText}`);
@@ -404,39 +743,78 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data.success) {
                     if (data.requires_confirmation && data.confirmation_data) {
                         setPendingConfirmation(data.confirmation_data);
-                        setMessages(prevMessages => [...prevMessages, { 
-                            sender: "bot", 
+                        const confirmationMessage = {
+                            sender: "bot",
                             text: data.confirmation_message || "Please confirm this action.",
                             requiresConfirmation: true,
                             confirmationData: data.confirmation_data,
                             timestamp: new Date()
-                        }]);
+                        };
+                        setMessages(prevMessages => [...prevMessages, confirmationMessage]);
+                        
+                        // Save confirmation message to database
+                        if (currentChatId) {
+                            saveMessageToDatabase('assistant', confirmationMessage.text, data.confirmation_data);
+                        }
                     } else {
                         setPendingConfirmation(null);
                         
-                        if (data.data === null || data.data === undefined) {
-                            setMessages(prevMessages => [...prevMessages, { 
-                                sender: "bot", 
+                        let botMessage;
+                        // ✅ Check if data.data is empty array, null, or undefined
+                        const isEmptyData = data.data === null || 
+                                          data.data === undefined || 
+                                          (Array.isArray(data.data) && data.data.length === 0);
+                        
+                        // ✅ Always use data.message if available, even when data.data is empty/null/undefined
+                        // This ensures we show the actual response from the backend, not a generic fallback
+                        if (data.message && isEmptyData) {
+                            // Backend returned a message but no data (e.g., "No matching records found")
+                            botMessage = {
+                                sender: "bot",
+                                text: data.message,
+                                timestamp: new Date()
+                            };
+                        } else if (isEmptyData) {
+                            // No message and no data - use fallback
+                            botMessage = {
+                                sender: "bot",
                                 text: data.message || "I received your message, but there's no data to display. Try asking me to show posts, products, or edit something specific.",
                                 timestamp: new Date()
-                            }]);
+                            };
                         } else {
+                            // Has data - format it
                             const formattedResponse = formatResponse(data.data);
-                            setMessages(prevMessages => [...prevMessages, { 
-                                sender: "bot", 
+                            botMessage = {
+                                sender: "bot",
                                 text: data.message || formattedResponse.summary || "Here's what I found:",
                                 formattedData: formattedResponse,
                                 timestamp: new Date()
-                            }]);
+                            };
+                        }
+                        setMessages(prevMessages => [...prevMessages, botMessage]);
+                        
+                        // Save bot message to database
+                        if (currentChatId) {
+                            // Save only the text message, formattedData goes in metadata
+                            saveMessageToDatabase('assistant', botMessage.text, {
+                                ...data,
+                                formattedData: botMessage.formattedData
+                            });
                         }
                     }
                 } else {
                     setPendingConfirmation(null);
-                    setMessages(prevMessages => [...prevMessages, { 
-                        sender: "bot", 
+                    const errorMessage = {
+                        sender: "bot",
                         text: data.message || "Sorry, I couldn't process that request. Please try again or rephrase your query.",
                         timestamp: new Date()
-                    }]);
+                    };
+                    setMessages(prevMessages => [...prevMessages, errorMessage]);
+                    
+                    // Save error message to database
+                    if (currentChatId) {
+                        saveMessageToDatabase('assistant', errorMessage.text, { error: true });
+                    }
                 }
             } catch (error) {
                 console.error("❌ API Error:", error);
@@ -488,9 +866,34 @@ document.addEventListener("DOMContentLoaded", function () {
             }]);
         };
 
-        const pluginUrl = window.heytrishaPluginUrl || "";
-        const botIconUrl = pluginUrl + "assets/js/chatbot-react-app/src/img/bot.jpeg";
-        const headerLogoUrl = pluginUrl + "assets/js/chatbot-react-app/src/img/heytrisha.jpeg";
+        // Get plugin URL from config, ensure it ends with /
+        let pluginUrl = (window.heytrishaConfig && window.heytrishaConfig.pluginUrl) || "";
+        if (pluginUrl && !pluginUrl.endsWith('/')) {
+            pluginUrl += '/';
+        }
+        
+        // Ensure absolute URL (if relative, make it absolute)
+        if (pluginUrl && !pluginUrl.startsWith('http') && !pluginUrl.startsWith('//')) {
+            // If it's a relative path, make it absolute from site root
+            const siteUrl = window.location.origin;
+            if (pluginUrl.startsWith('/')) {
+                pluginUrl = siteUrl + pluginUrl;
+            } else {
+                pluginUrl = siteUrl + '/' + pluginUrl;
+            }
+        }
+        
+        const botIconUrl = pluginUrl + "assets/img/bot.jpeg";
+        const headerLogoUrl = pluginUrl + "assets/img/heytrisha.jpeg";
+        
+        // Debug: Log URLs to console
+        console.log('HeyTrisha: pluginUrl =', pluginUrl);
+        console.log('HeyTrisha: botIconUrl =', botIconUrl);
+        console.log('HeyTrisha: headerLogoUrl =', headerLogoUrl);
+        
+        if (!pluginUrl) {
+            console.warn('HeyTrisha: pluginUrl is not set. Images may not load correctly.');
+        }
 
         return React.createElement("div", {
             className: "heytrisha-chatbot-container",
@@ -569,7 +972,11 @@ document.addEventListener("DOMContentLoaded", function () {
                                 boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
                             },
                             onError: (e) => {
+                                console.error('Failed to load header logo:', headerLogoUrl);
                                 e.target.style.display = "none";
+                            },
+                            onLoad: () => {
+                                console.log('Header logo loaded successfully:', headerLogoUrl);
                             }
                         }),
                         React.createElement("div", null,
@@ -637,10 +1044,15 @@ document.addEventListener("DOMContentLoaded", function () {
                                     marginRight: "10px",
                                     flexShrink: 0,
                                     objectFit: "cover",
-                                    boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)"
+                                    boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)",
+                                    display: "block"
                                 },
                                 onError: (e) => {
+                                    console.error('Failed to load bot icon:', botIconUrl);
                                     e.target.style.display = "none";
+                                },
+                                onLoad: () => {
+                                    console.log('Bot icon loaded successfully:', botIconUrl);
                                 }
                             }),
                         React.createElement("div", {
@@ -784,10 +1196,15 @@ document.addEventListener("DOMContentLoaded", function () {
                                 marginRight: "10px",
                                 flexShrink: 0,
                                 objectFit: "cover",
-                                boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)"
+                                boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)",
+                                display: "block"
                             },
                             onError: (e) => {
+                                console.error('Failed to load bot icon:', botIconUrl);
                                 e.target.style.display = "none";
+                            },
+                            onLoad: () => {
+                                console.log('Bot icon loaded successfully:', botIconUrl);
                             }
                         }),
                         React.createElement("div", {

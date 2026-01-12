@@ -45,4 +45,24 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    /**
+     * Register error view paths.
+     * Override to prevent errors when View service is not yet available.
+     *
+     * @return void
+     */
+    protected function registerErrorViewPaths()
+    {
+        // Only register error view paths if the View service is available
+        // This prevents "Target class [view] does not exist" errors during early bootstrapping
+        try {
+            if ($this->container->bound('view')) {
+                parent::registerErrorViewPaths();
+            }
+        } catch (\Exception $e) {
+            // Silently fail if view service is not available
+            // This is expected during early bootstrapping
+        }
+    }
 }
