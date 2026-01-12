@@ -1,375 +1,3 @@
-// // document.addEventListener("DOMContentLoaded", function () {
-// //     console.log("✅ chatbot.js loaded...");
-
-// //     let chatbotRoot = document.getElementById("chatbot-root");
-// //     if (!chatbotRoot) {
-// //         console.error("❌ #chatbot-root div is missing!");
-// //         return;
-// //     }
-
-// //     console.log("✅ #chatbot-root found! Mounting React...");
-
-// //     const Chatbot = () => {
-// //         const [messages, setMessages] = React.useState([
-// //             { sender: "bot", text: "Hello! How can I help you today?" }
-// //         ]);
-// //         const [inputText, setInputText] = React.useState("");
-
-// //         const handleSendMessage = async () => {
-// //             if (!inputText.trim()) return;
-
-// //             console.log("✅ Sending message:", inputText);
-
-// //             // Add user message to chat
-// //             setMessages(prevMessages => [...prevMessages, { sender: "user", text: inputText }]);
-// //             setInputText(""); // Clear input field
-
-// //             try {
-// //                 // Send message to Laravel API
-// //                 let response = await fetch("http://localhost:8000/api/query", {
-// //                     method: "POST",
-// //                     headers: { "Content-Type": "application/json" },
-// //                     body: JSON.stringify({ query: inputText })
-// //                 });
-
-// //                 let data = await response.json();
-// //                 console.log("✅ API Response:", data);
-
-// //                 if (data.success && data.data) {
-// //                     // Extract product names from response
-// //                     let productNames = data.data.map(item => item.post_title).join(", ");
-
-// //                     // Add bot response with product names
-// //                     setMessages(prevMessages => [...prevMessages, { sender: "bot", text: `Here are the last 10 products: ${productNames}` }]);
-// //                 } else {
-// //                     setMessages(prevMessages => [...prevMessages, { sender: "bot", text: "Sorry, no products found." }]);
-// //                 }
-// //             } catch (error) {
-// //                 console.error("❌ API Error:", error);
-// //                 setMessages(prevMessages => [...prevMessages, { sender: "bot", text: "Sorry, something went wrong!" }]);
-// //             }
-// //         };
-
-// //         return React.createElement("div", {
-// //             style: {
-// //                 width: "300px",
-// //                 height: "400px",
-// //                 position: "fixed",
-// //                 bottom: "20px",
-// //                 right: "20px",
-// //                 backgroundColor: "white",
-// //                 border: "1px solid #ccc",
-// //                 padding: "10px",
-// //                 borderRadius: "10px",
-// //                 zIndex: "9999",
-// //                 overflowY: "auto"
-// //             }
-// //         }, 
-// //             React.createElement("h3", null, "Hey Trisha Chatbot"),
-// //             React.createElement("div", { style: { height: "250px", overflowY: "auto", marginBottom: "10px" } },
-// //                 messages.map((msg, index) =>
-// //                     React.createElement("div", { key: index, style: { padding: "5px", backgroundColor: msg.sender === "bot" ? "#f0f0f0" : "#cce5ff", margin: "5px 0" } },
-// //                         msg.text
-// //                     )
-// //                 )
-// //             ),
-// //             React.createElement("input", {
-// //                 type: "text",
-// //                 id: "chat-input",
-// //                 value: inputText,
-// //                 onChange: (e) => setInputText(e.target.value),
-// //                 placeholder: "Type a message...",
-// //                 style: { width: "100%", padding: "5px", marginTop: "10px" }
-// //             }),
-// //             React.createElement("button", { 
-// //                 style: { marginTop: "10px", padding: "5px" },
-// //                 onClick: handleSendMessage  // Send message when clicked
-// //             }, "Send")
-// //         );
-// //     };
-
-// //     ReactDOM.createRoot(chatbotRoot).render(React.createElement(Chatbot));
-
-// //     console.log("✅ React chatbot successfully rendered!");
-// // });
-
-
-// document.addEventListener("DOMContentLoaded", function () {
-//     console.log("✅ chatbot.js loaded...");
-
-//     let chatbotRoot = document.getElementById("chatbot-root");
-//     if (!chatbotRoot) {
-//         console.error("❌ #chatbot-root div is missing!");
-//         return;
-//     }
-
-//     console.log("✅ #chatbot-root found! Mounting React...");
-
-//     const Chatbot = () => {
-//         const [messages, setMessages] = React.useState([
-//             { sender: "bot", text: "Hello! How can I help you today?" }
-//         ]);
-//         const [inputText, setInputText] = React.useState("");
-
-//         const handleSendMessage = async () => {
-//             if (!inputText.trim()) return;
-
-//             console.log("✅ Sending message:", inputText);
-
-//             // Add user message to chat
-//             setMessages(prevMessages => [...prevMessages, { sender: "user", text: inputText }]);
-//             setInputText(""); // Clear input field
-
-//             try {
-//                 // Send message to Laravel API
-//                 let response = await fetch("http://localhost:8000/api/query", {
-//                     method: "POST",
-//                     headers: { "Content-Type": "application/json" },
-//                     body: JSON.stringify({ query: inputText })
-//                 });
-
-//                 let data = await response.json();
-//                 console.log("✅ API Response:", data);
-
-//                 if (data.success && data.data) {
-//                     // ✅ Convert data object/array to a string and display it
-//                     let botReply = JSON.stringify(data.data, null, 2);
-
-//                     // Add bot response with raw data
-//                     setMessages(prevMessages => [...prevMessages, { sender: "bot", text: botReply }]);
-//                 } else {
-//                     setMessages(prevMessages => [...prevMessages, { sender: "bot", text: "No data available." }]);
-//                 }
-//             } catch (error) {
-//                 console.error("❌ API Error:", error);
-//                 setMessages(prevMessages => [...prevMessages, { sender: "bot", text: "Sorry, something went wrong!" }]);
-//             }
-//         };
-
-//         return React.createElement("div", {
-//             style: {
-//                 width: "300px",
-//                 height: "400px",
-//                 position: "fixed",
-//                 bottom: "20px",
-//                 right: "20px",
-//                 backgroundColor: "white",
-//                 border: "1px solid #ccc",
-//                 padding: "10px",
-//                 borderRadius: "10px",
-//                 zIndex: "9999",
-//                 overflowY: "auto"
-//             }
-//         }, 
-//             React.createElement("h3", null, "Hey Trisha Chatbot"),
-//             React.createElement("div", { style: { height: "250px", overflowY: "auto", marginBottom: "10px", whiteSpace: "pre-wrap" } },
-//                 messages.map((msg, index) =>
-//                     React.createElement("div", { key: index, style: { padding: "5px", backgroundColor: msg.sender === "bot" ? "#f0f0f0" : "#cce5ff", margin: "5px 0" } },
-//                         msg.text
-//                     )
-//                 )
-//             ),
-//             React.createElement("input", {
-//                 type: "text",
-//                 id: "chat-input",
-//                 value: inputText,
-//                 onChange: (e) => setInputText(e.target.value),
-//                 placeholder: "Type a message...",
-//                 style: { width: "100%", padding: "5px", marginTop: "10px" }
-//             }),
-//             React.createElement("button", { 
-//                 style: { marginTop: "10px", padding: "5px" },
-//                 onClick: handleSendMessage  // Send message when clicked
-//             }, "Send")
-//         );
-//     };
-
-//     ReactDOM.createRoot(chatbotRoot).render(React.createElement(Chatbot));
-
-//     console.log("✅ React chatbot successfully rendered!");
-// });
-
-
-// document.addEventListener("DOMContentLoaded", function () {
-//     console.log("✅ chatbot.js loaded...");
-
-//     let chatbotRoot = document.getElementById("chatbot-root");
-//     if (!chatbotRoot) {
-//         console.error("❌ #chatbot-root div is missing!");
-//         return;
-//     }
-
-//     console.log("✅ #chatbot-root found! Mounting React...");
-
-//     const Chatbot = () => {
-//         const [messages, setMessages] = React.useState([
-//             { sender: "bot", text: "Hello! How can I help you today?" }
-//         ]);
-//         const [inputText, setInputText] = React.useState("");
-//         const [isMinimized, setIsMinimized] = React.useState(false);
-//         const [isTyping, setIsTyping] = React.useState(false);
-
-//         const handleSendMessage = async () => {
-//             if (!inputText.trim()) return;
-
-//             console.log("✅ Sending message:", inputText);
-
-//             // Add user message to chat
-//             setMessages(prevMessages => [...prevMessages, { sender: "user", text: inputText }]);
-//             setInputText(""); // Clear input field
-
-//             // Show "Typing..."
-//             setIsTyping(true);
-
-//             try {
-//                 let response = await fetch("http://localhost:8000/api/query", {
-//                     method: "POST",
-//                     headers: { "Content-Type": "application/json" },
-//                     body: JSON.stringify({ query: inputText })
-//                 });
-
-//                 let data = await response.json();
-//                 console.log("✅ API Response:", data);
-
-//                 // Remove "Typing..."
-//                 setIsTyping(false);
-
-//                 if (data.success && data.data) {
-//                     let botReply = JSON.stringify(data.data, null, 2);
-//                     setMessages(prevMessages => [...prevMessages, { sender: "bot", text: botReply }]);
-//                 } else {
-//                     setMessages(prevMessages => [...prevMessages, { sender: "bot", text: "No data available." }]);
-//                 }
-//             } catch (error) {
-//                 console.error("❌ API Error:", error);
-//                 setMessages(prevMessages => [...prevMessages, { sender: "bot", text: "Sorry, something went wrong!" }]);
-//                 setIsTyping(false);
-//             }
-//         };
-
-//         return React.createElement("div", {
-//             style: {
-//                 width: isMinimized ? "300px" : "350px",
-//                 height: isMinimized ? "50px" : "450px",
-//                 position: "fixed",
-//                 bottom: "20px",
-//                 right: "20px",
-//                 backgroundColor: "white",
-//                 border: "1px solid #ccc",
-//                 borderRadius: "10px",
-//                 zIndex: "9999",
-//                 overflow: "hidden",
-//                 boxShadow: "0px 4px 10px rgba(0,0,0,0.1)"
-//             }
-//         }, 
-//             // Close Button (Outside Chatbot)
-//             !isMinimized && React.createElement("button", {
-//                 style: {
-//                     position: "absolute",
-//                     top: "-10px",
-//                     right: "-10px",
-//                     backgroundColor: "red",
-//                     color: "white",
-//                     border: "none",
-//                     borderRadius: "50%",
-//                     width: "25px",
-//                     height: "25px",
-//                     cursor: "pointer",
-//                     fontSize: "14px",
-//                     fontWeight: "bold"
-//                 },
-//                 onClick: () => setIsMinimized(true)
-//             }, "❌"),
-
-//             // Header with Minimize/Maximize Button
-//             React.createElement("div", {
-//                 style: {
-//                     backgroundColor: "#007bff",
-//                     color: "white",
-//                     padding: "10px",
-//                     fontSize: "16px",
-//                     fontWeight: "bold",
-//                     display: "flex",
-//                     justifyContent: "space-between",
-//                     alignItems: "center",
-//                     cursor: "pointer"
-//                 },
-//                 onClick: () => setIsMinimized(!isMinimized)
-//             }, 
-//                 "Hey Trisha Chatbot",
-//                 React.createElement("span", { 
-//                     style: { cursor: "pointer", fontSize: "18px", fontWeight: "bold" } 
-//                 }, isMinimized ? "🔼" : "🔽") // Icon Toggle
-//             ),
-
-//             // Chat Content (Hidden when minimized)
-//             !isMinimized && React.createElement("div", { style: { height: "300px", overflowY: "auto", padding: "10px", whiteSpace: "pre-wrap" } },
-//                 messages.map((msg, index) =>
-//                     React.createElement("div", {
-//                         key: index,
-//                         style: {
-//                             display: "flex",
-//                             alignItems: "center",
-//                             justifyContent: msg.sender === "bot" ? "flex-start" : "flex-end",
-//                             marginBottom: "10px"
-//                         }
-//                     },
-//                         msg.sender === "bot" ?
-//                             React.createElement("img", {
-//                                 src: "https://img.icons8.com/ios-filled/50/000000/bot.png",
-//                                 alt: "Bot",
-//                                 style: { width: "25px", height: "25px", marginRight: "8px" }
-//                             })
-//                             :
-//                             React.createElement("img", {
-//                                 src: "https://img.icons8.com/ios-filled/50/000000/user.png",
-//                                 alt: "User",
-//                                 style: { width: "25px", height: "25px", marginLeft: "8px" }
-//                             }),
-//                         React.createElement("div", {
-//                             style: {
-//                                 padding: "8px",
-//                                 backgroundColor: msg.sender === "bot" ? "#f0f0f0" : "#cce5ff",
-//                                 borderRadius: "8px",
-//                                 maxWidth: "70%"
-//                             }
-//                         }, msg.text)
-//                     )
-//                 ),
-//                 isTyping && React.createElement("div", {
-//                     style: {
-//                         fontStyle: "italic",
-//                         color: "#888",
-//                         textAlign: "left"
-//                     }
-//                 }, "Typing...")
-//             ),
-
-//             // Input Box and Send Button (Hidden when minimized)
-//             !isMinimized && React.createElement("div", { style: { padding: "10px", borderTop: "1px solid #ddd" } },
-//                 React.createElement("input", {
-//                     type: "text",
-//                     id: "chat-input",
-//                     value: inputText,
-//                     onChange: (e) => setInputText(e.target.value),
-//                     placeholder: "Type a message...",
-//                     style: { width: "100%", padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }
-//                 }),
-//                 React.createElement("button", { 
-//                     style: { marginTop: "10px", padding: "8px", width: "100%", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" },
-//                     onClick: handleSendMessage  
-//                 }, "Send")
-//             )
-//         );
-//     };
-
-//     ReactDOM.createRoot(chatbotRoot).render(React.createElement(Chatbot));
-
-//     console.log("✅ React chatbot successfully rendered!");
-// });
-
-
-
 document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ chatbot.js loaded...");
 
@@ -383,43 +11,729 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const Chatbot = () => {
         const [messages, setMessages] = React.useState([
-            { sender: "bot", text: "Hello! How can I help you today?" }
+            { 
+                sender: "bot", 
+                text: "Hello! 👋 I'm Trisha, your AI assistant. How can I help you today?", 
+                timestamp: new Date() 
+            }
         ]);
         const [inputText, setInputText] = React.useState("");
-        const [isMinimized, setIsMinimized] = React.useState(false);
+        const [isMinimized, setIsMinimized] = React.useState(true);
         const [isTyping, setIsTyping] = React.useState(false);
+        const [pendingConfirmation, setPendingConfirmation] = React.useState(null);
+        const [currentChatId, setCurrentChatId] = React.useState(null);
+        const messagesEndRef = React.useRef(null);
+        const inputRef = React.useRef(null);
+        
+        // Get REST API config
+        const restUrl = (window.heytrishaConfig && window.heytrishaConfig.restUrl) || '';
+        const wpRestNonce = (window.heytrishaConfig && window.heytrishaConfig.wpRestNonce) || '';
 
-        const formatResponse = (data) => {
-            if (!data) return "No data available.";
+        // Auto-scroll to bottom when new message arrives
+        React.useEffect(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, [messages, isTyping]);
 
-            if (Array.isArray(data)) {
-                // ✅ If data is an array, format each object separately
-                return data.map(item => 
-                    Object.entries(item).map(([key, value]) => `${key}: ${value}`).join("\n")
-                ).join("\n\n");
-            } else if (typeof data === "object") {
-                // ✅ If data is a single object, format it
-                return Object.entries(data).map(([key, value]) => `${key}: ${value}`).join("\n");
-            } else {
-                // ✅ If data is a simple string or number, return it directly
-                return String(data);
+        // Focus input when chat opens
+        React.useEffect(() => {
+            if (!isMinimized && inputRef.current) {
+                inputRef.current.focus();
+            }
+        }, [isMinimized]);
+        
+        // Auto-start server when chatbot component mounts
+        React.useEffect(() => {
+            // Check if server is running and start if needed (only for non-shared hosting)
+            const isSharedHosting = (window.heytrishaConfig && window.heytrishaConfig.isSharedHosting) || false;
+            if (!isSharedHosting) {
+                startServerIfNeeded();
+            }
+        }, []);
+        
+        // Start server if not running
+        const startServerIfNeeded = async () => {
+            try {
+                const ajaxUrl = (window.heytrishaConfig && window.heytrishaConfig.ajaxurl) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+                const serverNonce = (window.heytrishaConfig && window.heytrishaConfig.serverNonce) || '';
+                
+                const response = await fetch(ajaxUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'heytrisha_start_server',
+                        nonce: serverNonce
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ Server started successfully');
+                    return true;
+                } else {
+                    console.log('ℹ️ Server status:', result.data?.message || 'Unknown');
+                    return false;
+                }
+            } catch (error) {
+                console.warn('⚠️ Could not check/start server:', error);
+                return false;
+            }
+        };
+        
+        // Create or load chat when chatbot opens
+        React.useEffect(() => {
+            if (!isMinimized && !currentChatId && restUrl && wpRestNonce) {
+                createOrLoadChat();
+            }
+        }, [isMinimized]);
+        
+        // Create or load chat
+        const createOrLoadChat = async () => {
+            if (!restUrl || !wpRestNonce) return;
+            
+            try {
+                // Try to get the most recent active chat
+                const chatsResponse = await fetch(`${restUrl}chats?archived=false`, {
+                    headers: {
+                        'X-WP-Nonce': wpRestNonce
+                    }
+                });
+                const chats = await chatsResponse.json();
+                
+                if (chats && chats.length > 0 && !chats.code) {
+                    // Load the most recent chat
+                    const recentChat = chats[0];
+                    setCurrentChatId(recentChat.id);
+                    loadChatMessages(recentChat.id);
+                } else {
+                    // Create new chat
+                    const createResponse = await fetch(`${restUrl}chats`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-WP-Nonce': wpRestNonce
+                        },
+                        body: JSON.stringify({ title: 'Chat Widget' })
+                    });
+                    const newChat = await createResponse.json();
+                    if (newChat && !newChat.code) {
+                        setCurrentChatId(newChat.id);
+                        setMessages([{
+                            sender: "bot",
+                            text: "Hello! 👋 I'm Trisha, your AI assistant. How can I help you today?",
+                            timestamp: new Date()
+                        }]);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to create/load chat:', error);
+            }
+        };
+        
+        // Load chat messages
+        const loadChatMessages = async (chatId) => {
+            if (!restUrl || !wpRestNonce) return;
+            
+            try {
+                const response = await fetch(`${restUrl}chats/${chatId}`, {
+                    headers: {
+                        'X-WP-Nonce': wpRestNonce
+                    }
+                });
+                const chat = await response.json();
+                if (chat && !chat.code && chat.messages) {
+                    // Convert database messages to chatbot format
+                    const formattedMessages = chat.messages.map(msg => {
+                        const messageObj = {
+                            sender: msg.role === 'user' ? 'user' : 'bot',
+                            text: msg.content,
+                            timestamp: new Date(msg.created_at)
+                        };
+                        
+                        // Extract formattedData from metadata if it exists
+                        if (msg.metadata && msg.metadata.formattedData) {
+                            messageObj.formattedData = msg.metadata.formattedData;
+                        } else if (msg.metadata && typeof msg.metadata === 'object') {
+                            // Try to extract formattedData from metadata object
+                            try {
+                                // Check if metadata has formattedData
+                                if (msg.metadata.formattedData) {
+                                    messageObj.formattedData = typeof msg.metadata.formattedData === 'string' 
+                                        ? JSON.parse(msg.metadata.formattedData) 
+                                        : msg.metadata.formattedData;
+                                }
+                            } catch (e) {
+                                // Ignore parsing errors
+                            }
+                        }
+                        
+                        // If content contains JSON at the end, try to extract it
+                        if (!messageObj.formattedData && msg.content && msg.content.includes('{')) {
+                            try {
+                                const jsonMatch = msg.content.match(/\{[\s\S]*\}$/);
+                                if (jsonMatch) {
+                                    const parsed = JSON.parse(jsonMatch[0]);
+                                    if (parsed.type && (parsed.type === 'table' || parsed.type === 'details' || parsed.type === 'card')) {
+                                        messageObj.formattedData = parsed;
+                                        // Remove JSON from text
+                                        messageObj.text = msg.content.replace(/\s*\{[\s\S]*\}$/, '').trim();
+                                    }
+                                }
+                            } catch (e) {
+                                // Ignore parsing errors
+                            }
+                        }
+                        
+                        return messageObj;
+                    });
+                    setMessages(formattedMessages.length > 0 ? formattedMessages : [{
+                        sender: "bot",
+                        text: "Hello! 👋 I'm Trisha, your AI assistant. How can I help you today?",
+                        timestamp: new Date()
+                    }]);
+                }
+            } catch (error) {
+                console.error('Failed to load chat messages:', error);
+            }
+        };
+        
+        // Save message to database
+        const saveMessageToDatabase = async (role, content, metadata = null) => {
+            if (!currentChatId || !restUrl || !wpRestNonce) return;
+            
+            try {
+                await fetch(`${restUrl}chats/${currentChatId}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': wpRestNonce
+                    },
+                    body: JSON.stringify({
+                        role: role,
+                        content: content,
+                        metadata: metadata
+                    })
+                });
+            } catch (error) {
+                console.error('Failed to save message to database:', error);
+            }
+        };
+        
+        // Update chat title if needed
+        const updateChatTitleIfNeeded = async (chatId, firstMessage) => {
+            if (!restUrl || !wpRestNonce) return;
+            
+            try {
+                // Check current chat title
+                const chatResponse = await fetch(`${restUrl}chats/${chatId}`, {
+                    headers: {
+                        'X-WP-Nonce': wpRestNonce
+                    }
+                });
+                const chat = await chatResponse.json();
+                if (chat && !chat.code && (chat.title === 'Chat Widget' || chat.title === 'New Chat')) {
+                    const newTitle = firstMessage.substring(0, 50);
+                    await fetch(`${restUrl}chats/${chatId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-WP-Nonce': wpRestNonce
+                        },
+                        body: JSON.stringify({ title: newTitle })
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to update chat title:', error);
             }
         };
 
-        const handleSendMessage = async () => {
-            if (!inputText.trim()) return;
+        // ✅ Enhanced response formatting
+        const formatResponse = (data) => {
+            if (data === null || data === undefined) {
+                return { type: "text", content: "No data available." };
+            }
 
-            console.log("✅ Sending message:", inputText);
-            setMessages(prevMessages => [...prevMessages, { sender: "user", text: inputText }]);
-            setInputText("");
+            if (typeof data === "string") {
+                return { type: "text", content: data };
+            }
+
+            if (Array.isArray(data)) {
+                if (data.length === 0) {
+                    return { type: "text", content: "No results found." };
+                }
+
+                if (data.length > 0 && typeof data[0] === "object") {
+                    return {
+                        type: "table",
+                        content: data,
+                        summary: `Found ${data.length} result${data.length > 1 ? 's' : ''}`
+                    };
+                }
+
+                return {
+                    type: "list",
+                    content: data,
+                    summary: `Found ${data.length} item${data.length > 1 ? 's' : ''}`
+                };
+            }
+
+            if (typeof data === "object") {
+                if (data.title || data.name || data.post_title || data.product_name) {
+                    return {
+                        type: "card",
+                        content: data,
+                        title: data.title || data.name || data.post_title || data.product_name || "Item Details"
+                    };
+                }
+
+                const keys = Object.keys(data);
+                if (keys.length > 0) {
+                    return {
+                        type: "details",
+                        content: data,
+                        summary: "Details"
+                    };
+                }
+
+                return { type: "text", content: "Empty response." };
+            }
+
+            return { type: "text", content: String(data) };
+        };
+
+        // ✅ Format timestamp
+        const formatTime = (date) => {
+            if (!date) return "";
+            const d = new Date(date);
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        };
+
+        // ✅ Render formatted message content
+        const renderMessageContent = (formattedData) => {
+            // Handle case where formattedData might be a JSON string
+            if (typeof formattedData === "string") {
+                try {
+                    formattedData = JSON.parse(formattedData);
+                } catch (e) {
+                    // If it's not JSON, treat as text content
+                    return React.createElement("div", { 
+                        style: { 
+                            whiteSpace: "pre-wrap", 
+                            lineHeight: "1.6",
+                            wordBreak: "break-word"
+                        } 
+                    }, formattedData);
+                }
+            }
+            
+            if (!formattedData || formattedData.type === "text") {
+                return React.createElement("div", { 
+                    style: { 
+                        whiteSpace: "pre-wrap", 
+                        lineHeight: "1.6",
+                        wordBreak: "break-word"
+                    } 
+                }, formattedData?.content || "");
+            }
+
+            if (formattedData.type === "table") {
+                const maxRows = 15;
+                const displayData = Array.isArray(formattedData.content) ? formattedData.content.slice(0, maxRows) : [];
+                
+                return React.createElement("div", { style: { marginTop: "12px" } },
+                    formattedData.summary && React.createElement("div", { 
+                        style: { 
+                            marginBottom: "12px", 
+                            fontWeight: "600", 
+                            color: "#1e40af",
+                            fontSize: "13px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px"
+                        } 
+                    }, 
+                        React.createElement("span", null, "📊"),
+                        React.createElement("span", null, formattedData.summary)
+                    ),
+                    React.createElement("div", {
+                        style: {
+                            maxHeight: "400px",
+                            overflowY: "auto",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "12px",
+                            backgroundColor: "#ffffff",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+                        }
+                    },
+                        displayData.map((item, idx) => {
+                            const entries = Object.entries(item).filter(([key]) => 
+                                !key.includes('_meta') && !key.includes('_cache')
+                            );
+                            
+                            return React.createElement("div", {
+                                key: idx,
+                                style: {
+                                    padding: "14px 16px",
+                                    borderBottom: idx < displayData.length - 1 ? "1px solid #f3f4f6" : "none",
+                                    backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f9fafb",
+                                    transition: "background-color 0.2s"
+                                }
+                            },
+                                entries.slice(0, 8).map(([key, value], i) => {
+                                    const readableKey = key
+                                        .replace(/_/g, " ")
+                                        .replace(/\b\w/g, l => l.toUpperCase())
+                                        .replace(/Id/g, "ID")
+                                        .replace(/Url/g, "URL");
+                                    
+                                    const displayValue = value === null || value === undefined 
+                                        ? "N/A" 
+                                        : String(value).length > 100 
+                                            ? String(value).substring(0, 100) + "..." 
+                                            : String(value);
+                                    
+                                    return React.createElement("div", {
+                                        key: i,
+                                        style: {
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            marginBottom: i < entries.length - 1 ? "8px" : "0",
+                                            fontSize: "13px",
+                                            gap: "12px"
+                                        }
+                                    },
+                                        React.createElement("span", { 
+                                            style: { 
+                                                fontWeight: "600", 
+                                                color: "#374151", 
+                                                minWidth: "140px",
+                                                flexShrink: 0
+                                            } 
+                                        }, readableKey + ":"),
+                                        React.createElement("span", { 
+                                            style: { 
+                                                color: "#6b7280", 
+                                                textAlign: "right", 
+                                                wordBreak: "break-word",
+                                                flex: 1
+                                            } 
+                                        }, displayValue)
+                                    );
+                                })
+                            );
+                        }),
+                        formattedData.content.length > maxRows && React.createElement("div", {
+                            style: {
+                                padding: "12px",
+                                textAlign: "center",
+                                color: "#6b7280",
+                                fontSize: "12px",
+                                fontStyle: "italic",
+                                backgroundColor: "#f9fafb",
+                                borderTop: "1px solid #e5e7eb"
+                            }
+                        }, `... and ${formattedData.content.length - maxRows} more result${formattedData.content.length - maxRows > 1 ? 's' : ''}`)
+                    )
+                );
+            }
+
+            if (formattedData.type === "card") {
+                const entries = Object.entries(formattedData.content).filter(([key]) => 
+                    key !== 'title' && key !== 'name' && key !== 'post_title' && key !== 'product_name'
+                );
+                
+                return React.createElement("div", {
+                    style: {
+                        marginTop: "12px",
+                        padding: "16px",
+                        backgroundColor: "#eff6ff",
+                        border: "1px solid #bfdbfe",
+                        borderRadius: "12px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+                    }
+                },
+                    React.createElement("div", { 
+                        style: { 
+                            fontWeight: "700", 
+                            fontSize: "16px", 
+                            marginBottom: "12px", 
+                            color: "#1e40af" 
+                        } 
+                    }, `📋 ${formattedData.title}`),
+                    entries.slice(0, 10).map(([key, value], i) => {
+                        const readableKey = key
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, l => l.toUpperCase())
+                            .replace(/Id/g, "ID");
+                        
+                        return React.createElement("div", {
+                            key: i,
+                            style: {
+                                display: "flex",
+                                marginBottom: "10px",
+                                fontSize: "13px",
+                                gap: "12px"
+                            }
+                        },
+                            React.createElement("span", { 
+                                style: { 
+                                    fontWeight: "600", 
+                                    color: "#374151", 
+                                    minWidth: "120px",
+                                    flexShrink: 0
+                                } 
+                            }, readableKey + ":"),
+                            React.createElement("span", { 
+                                style: { 
+                                    color: "#6b7280", 
+                                    wordBreak: "break-word",
+                                    flex: 1
+                                } 
+                            }, value === null || value === undefined ? "N/A" : String(value))
+                        );
+                    })
+                );
+            }
+
+            if (formattedData.type === "details") {
+                const entries = Object.entries(formattedData.content);
+                return React.createElement("div", {
+                    style: {
+                        marginTop: "12px",
+                        padding: "16px",
+                        backgroundColor: "#f9fafb",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "12px"
+                    }
+                },
+                    entries.map(([key, value], i) => {
+                        const readableKey = key
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, l => l.toUpperCase())
+                            .replace(/Id/g, "ID");
+                        
+                        return React.createElement("div", {
+                            key: i,
+                            style: {
+                                display: "flex",
+                                marginBottom: "10px",
+                                fontSize: "13px",
+                                gap: "12px"
+                            }
+                        },
+                            React.createElement("span", { 
+                                style: { 
+                                    fontWeight: "600", 
+                                    color: "#374151", 
+                                    minWidth: "140px",
+                                    flexShrink: 0
+                                } 
+                            }, readableKey + ":"),
+                            React.createElement("span", { 
+                                style: { 
+                                    color: "#6b7280", 
+                                    wordBreak: "break-word",
+                                    flex: 1
+                                } 
+                            }, value === null || value === undefined ? "N/A" : String(value))
+                        );
+                    })
+                );
+            }
+
+            if (formattedData.type === "list") {
+                return React.createElement("div", { style: { marginTop: "12px" } },
+                    React.createElement("div", { 
+                        style: { 
+                            marginBottom: "10px", 
+                            fontWeight: "600", 
+                            color: "#1e40af",
+                            fontSize: "13px"
+                        } 
+                    }, `📋 ${formattedData.summary}`),
+                    React.createElement("ul", { 
+                        style: { 
+                            margin: 0, 
+                            paddingLeft: "24px",
+                            listStyleType: "disc"
+                        } 
+                    },
+                        formattedData.content.map((item, idx) =>
+                            React.createElement("li", { 
+                                key: idx, 
+                                style: { 
+                                    marginBottom: "6px", 
+                                    color: "#374151",
+                                    lineHeight: "1.6"
+                                } 
+                            }, String(item))
+                        )
+                    )
+                );
+            }
+
+            return React.createElement("div", null, String(formattedData.content));
+        };
+
+        const handleSendMessage = async (confirmed = false, confirmationData = null) => {
+            const queryText = confirmed ? inputText : (inputText.trim() || "");
+            if (!queryText && !confirmed) return;
+
+            if (!confirmed) {
+                console.log("✅ Sending message:", queryText);
+                const userMessage = { 
+                    sender: "user", 
+                    text: queryText,
+                    timestamp: new Date()
+                };
+                setMessages(prevMessages => [...prevMessages, userMessage]);
+                setInputText("");
+                
+                // Save user message to database
+                if (currentChatId) {
+                    saveMessageToDatabase('user', queryText);
+                    // Update chat title if it's still "Chat Widget"
+                    updateChatTitleIfNeeded(currentChatId, queryText);
+                } else if (restUrl && wpRestNonce) {
+                    // Create chat first if it doesn't exist
+                    try {
+                        const createResponse = await fetch(`${restUrl}chats`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-WP-Nonce': wpRestNonce
+                            },
+                            body: JSON.stringify({ title: queryText.substring(0, 50) })
+                        });
+                        const newChat = await createResponse.json();
+                        if (newChat && !newChat.code) {
+                            setCurrentChatId(newChat.id);
+                            saveMessageToDatabase('user', queryText);
+                        }
+                    } catch (error) {
+                        console.error('Failed to create chat:', error);
+                    }
+                }
+            }
+            
             setIsTyping(true);
 
             try {
-                let response = await fetch("http://localhost:8000/api/query", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ query: inputText })
-                });
+                const requestBody = confirmed && confirmationData
+                    ? { 
+                        query: confirmationData.original_query || "",
+                        confirmed: true,
+                        confirmation_data: confirmationData
+                      }
+                    : { query: queryText };
+
+                // ✅ Create AbortController for timeout (reduced to 20 seconds for faster feedback)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+
+                // ✅ Use admin-ajax.php instead of REST API (hides endpoint from Network tab)
+                const ajaxUrl = (window.heytrishaConfig && window.heytrishaConfig.ajaxurl) || '/wp-admin/admin-ajax.php';
+                
+                console.log('🌐 Using admin-ajax.php (secure endpoint)');
+                
+                let response;
+                let retrySuccess = false;
+                try {
+                    // ✅ Send request to admin-ajax.php with form-encoded data (WordPress standard)
+                    const formData = new FormData();
+                    formData.append('action', 'heytrisha_query');
+                    formData.append('endpoint', 'query');
+                    
+                    // Add query parameters as JSON string
+                    if (requestBody.query) {
+                        formData.append('query', requestBody.query);
+                    }
+                    if (requestBody.confirmed !== undefined) {
+                        formData.append('confirmed', requestBody.confirmed);
+                    }
+                    if (requestBody.confirmation_data) {
+                        formData.append('confirmation_data', JSON.stringify(requestBody.confirmation_data));
+                    }
+                    
+                    response = await fetch(ajaxUrl, {
+                        method: "POST",
+                        body: formData,
+                        signal: controller.signal
+                    });
+                } catch (fetchError) {
+                    clearTimeout(timeoutId);
+                    if (fetchError.name === 'AbortError') {
+                        throw new Error('Request timeout: Server took too long to respond. Please try again.');
+                    }
+                    // Check if it's a connection error (server not ready)
+                    if (fetchError.message && (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError'))) {
+                        // Try to start the server automatically
+                        const isSharedHosting = (window.heytrishaConfig && window.heytrishaConfig.isSharedHosting) || false;
+                        if (!isSharedHosting) {
+                            console.log('🔄 Connection failed, attempting to start server...');
+                            try {
+                                const serverStarted = await startServerIfNeeded();
+                                if (serverStarted) {
+                                    // Wait a moment for server to start
+                                    await new Promise(resolve => setTimeout(resolve, 2000));
+                                    // Retry the request once with correct endpoint
+                                    console.log('🔄 Retrying request after server start...');
+                                    const retryController = new AbortController();
+                                    const retryTimeoutId = setTimeout(() => retryController.abort(), 20000);
+                                    
+                                    try {
+                                        // ✅ Retry with admin-ajax.php (form-encoded)
+                                        const retryFormData = new FormData();
+                                        retryFormData.append('action', 'heytrisha_query');
+                                        retryFormData.append('endpoint', 'query');
+                                        
+                                        if (requestBody.query) {
+                                            retryFormData.append('query', requestBody.query);
+                                        }
+                                        if (requestBody.confirmed !== undefined) {
+                                            retryFormData.append('confirmed', requestBody.confirmed);
+                                        }
+                                        if (requestBody.confirmation_data) {
+                                            retryFormData.append('confirmation_data', JSON.stringify(requestBody.confirmation_data));
+                                        }
+                                        
+                                        response = await fetch(ajaxUrl, {
+                                            method: 'POST',
+                                            body: retryFormData,
+                                            signal: retryController.signal
+                                        });
+                                        clearTimeout(retryTimeoutId);
+                                        
+                                        if (!response.ok) {
+                                            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                                        }
+                                        retrySuccess = true; // Mark retry as successful
+                                    } catch (retryError) {
+                                        clearTimeout(retryTimeoutId);
+                                        console.error('❌ Retry failed:', retryError);
+                                        throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                                    }
+                                } else {
+                                    throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                                }
+                            } catch (retryError) {
+                                console.error('❌ Server start/retry failed:', retryError);
+                                throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                            }
+                        } else {
+                            throw new Error('Could not connect to server. The server may still be starting. Please wait a moment and try again.');
+                        }
+                    } else {
+                        throw fetchError;
+                    }
+                }
+                if (!retrySuccess) {
+                    clearTimeout(timeoutId);
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
 
                 let data = await response.json();
                 console.log("✅ API Response:", data);
@@ -427,131 +741,597 @@ document.addEventListener("DOMContentLoaded", function () {
                 setIsTyping(false);
 
                 if (data.success) {
-                    let formattedResponse = formatResponse(data.data);
-                    setMessages(prevMessages => [...prevMessages, { sender: "bot", text: formattedResponse }]);
+                    if (data.requires_confirmation && data.confirmation_data) {
+                        setPendingConfirmation(data.confirmation_data);
+                        const confirmationMessage = {
+                            sender: "bot",
+                            text: data.confirmation_message || "Please confirm this action.",
+                            requiresConfirmation: true,
+                            confirmationData: data.confirmation_data,
+                            timestamp: new Date()
+                        };
+                        setMessages(prevMessages => [...prevMessages, confirmationMessage]);
+                        
+                        // Save confirmation message to database
+                        if (currentChatId) {
+                            saveMessageToDatabase('assistant', confirmationMessage.text, data.confirmation_data);
+                        }
+                    } else {
+                        setPendingConfirmation(null);
+                        
+                        let botMessage;
+                        // ✅ Check if data.data is empty array, null, or undefined
+                        const isEmptyData = data.data === null || 
+                                          data.data === undefined || 
+                                          (Array.isArray(data.data) && data.data.length === 0);
+                        
+                        // ✅ Always use data.message if available, even when data.data is empty/null/undefined
+                        // This ensures we show the actual response from the backend, not a generic fallback
+                        if (data.message && isEmptyData) {
+                            // Backend returned a message but no data (e.g., "No matching records found")
+                            botMessage = {
+                                sender: "bot",
+                                text: data.message,
+                                timestamp: new Date()
+                            };
+                        } else if (isEmptyData) {
+                            // No message and no data - use fallback
+                            botMessage = {
+                                sender: "bot",
+                                text: data.message || "I received your message, but there's no data to display. Try asking me to show posts, products, or edit something specific.",
+                                timestamp: new Date()
+                            };
+                        } else {
+                            // Has data - format it
+                            const formattedResponse = formatResponse(data.data);
+                            botMessage = {
+                                sender: "bot",
+                                text: data.message || formattedResponse.summary || "Here's what I found:",
+                                formattedData: formattedResponse,
+                                timestamp: new Date()
+                            };
+                        }
+                        setMessages(prevMessages => [...prevMessages, botMessage]);
+                        
+                        // Save bot message to database
+                        if (currentChatId) {
+                            // Save only the text message, formattedData goes in metadata
+                            saveMessageToDatabase('assistant', botMessage.text, {
+                                ...data,
+                                formattedData: botMessage.formattedData
+                            });
+                        }
+                    }
                 } else {
-                    setMessages(prevMessages => [...prevMessages, { sender: "bot", text: "No data found." }]);
+                    setPendingConfirmation(null);
+                    const errorMessage = {
+                        sender: "bot",
+                        text: data.message || "Sorry, I couldn't process that request. Please try again or rephrase your query.",
+                        timestamp: new Date()
+                    };
+                    setMessages(prevMessages => [...prevMessages, errorMessage]);
+                    
+                    // Save error message to database
+                    if (currentChatId) {
+                        saveMessageToDatabase('assistant', errorMessage.text, { error: true });
+                    }
                 }
             } catch (error) {
                 console.error("❌ API Error:", error);
-                setMessages(prevMessages => [...prevMessages, { sender: "bot", text: "Sorry, something went wrong!" }]);
                 setIsTyping(false);
+                setPendingConfirmation(null);
+                
+                // Better error messages
+                let errorMessage = "Sorry, something went wrong! ";
+                if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+                    errorMessage += "The server took too long to respond. Please try again in a moment.";
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMessage += "Could not connect to the API server. Please check if the server is running.";
+                } else {
+                    errorMessage += error.message || "Please check if the API server is running.";
+                }
+                
+                setMessages(prevMessages => [...prevMessages, { 
+                    sender: "bot", 
+                    text: errorMessage,
+                    timestamp: new Date()
+                }]);
             }
         };
 
+        const handleConfirm = () => {
+            if (pendingConfirmation) {
+                setMessages(prevMessages => [...prevMessages, { 
+                    sender: "user", 
+                    text: "Yes, proceed with the edit.",
+                    timestamp: new Date()
+                }]);
+                setIsTyping(true);
+                handleSendMessage(true, pendingConfirmation);
+                setPendingConfirmation(null);
+            }
+        };
+
+        const handleCancel = () => {
+            setPendingConfirmation(null);
+            setMessages(prevMessages => [...prevMessages, { 
+                sender: "user", 
+                text: "Cancel",
+                timestamp: new Date()
+            }]);
+            setMessages(prevMessages => [...prevMessages, { 
+                sender: "bot", 
+                text: "Edit operation cancelled.",
+                timestamp: new Date()
+            }]);
+        };
+
+        // Get plugin URL from config, ensure it ends with /
+        let pluginUrl = (window.heytrishaConfig && window.heytrishaConfig.pluginUrl) || "";
+        if (pluginUrl && !pluginUrl.endsWith('/')) {
+            pluginUrl += '/';
+        }
+        
+        // Ensure absolute URL (if relative, make it absolute)
+        if (pluginUrl && !pluginUrl.startsWith('http') && !pluginUrl.startsWith('//')) {
+            // If it's a relative path, make it absolute from site root
+            const siteUrl = window.location.origin;
+            if (pluginUrl.startsWith('/')) {
+                pluginUrl = siteUrl + pluginUrl;
+            } else {
+                pluginUrl = siteUrl + '/' + pluginUrl;
+            }
+        }
+        
+        const botIconUrl = pluginUrl + "assets/img/bot.jpeg";
+        const headerLogoUrl = pluginUrl + "assets/img/heytrisha.jpeg";
+        
+        // Debug: Log URLs to console
+        console.log('HeyTrisha: pluginUrl =', pluginUrl);
+        console.log('HeyTrisha: botIconUrl =', botIconUrl);
+        console.log('HeyTrisha: headerLogoUrl =', headerLogoUrl);
+        
+        if (!pluginUrl) {
+            console.warn('HeyTrisha: pluginUrl is not set. Images may not load correctly.');
+        }
+
         return React.createElement("div", {
+            className: "heytrisha-chatbot-container",
             style: {
-                width: "350px",
-                height: isMinimized ? "50px" : "450px",
+                width: isMinimized ? "64px" : "360px",
+                height: isMinimized ? "64px" : "550px",
                 position: "fixed",
                 bottom: "20px",
                 right: "20px",
                 backgroundColor: "white",
-                border: "1px solid #ccc",
-                borderRadius: "10px",
-                zIndex: "9999",
+                borderRadius: "20px",
+                zIndex: "999999",
                 overflow: "hidden",
-                boxShadow: "0px 4px 10px rgba(0,0,0,0.1)"
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.05)",
+                display: "flex",
+                flexDirection: "column",
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
             }
         }, 
-            !isMinimized && React.createElement("button", {
+            // Minimized state - floating button
+            isMinimized && React.createElement("div", {
                 style: {
-                    position: "absolute",
-                    top: "8px",
-                    right: "10px",
-                    backgroundColor: "red",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: "25px",
-                    height: "25px",
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                     cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "bold"
+                    borderRadius: "20px",
+                    transition: "transform 0.2s",
+                    boxShadow: "0 10px 30px rgba(102, 126, 234, 0.4)"
                 },
-                onClick: () => setIsMinimized(true)
-            }, "❌"),
+                onClick: () => setIsMinimized(false),
+                onMouseEnter: (e) => e.currentTarget.style.transform = "scale(1.05)",
+                onMouseLeave: (e) => e.currentTarget.style.transform = "scale(1)"
+            },
+                React.createElement("div", { 
+                    style: { 
+                        fontSize: "32px",
+                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
+                    } 
+                }, "💬")
+            ),
 
+            // Full chat interface
+            !isMinimized && React.createElement(React.Fragment, null,
+                // Header
             React.createElement("div", {
                 style: {
-                    backgroundColor: "#007bff",
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                     color: "white",
-                    padding: "10px",
-                    fontSize: "16px",
-                    fontWeight: "bold",
+                        padding: "16px 20px",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    cursor: "pointer"
+                        boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+                    }
                 },
-                onClick: () => setIsMinimized(!isMinimized)
-            }, 
-                "Hey Trisha Chatbot",
-                React.createElement("span", { 
-                    style: { cursor: "pointer", fontSize: "18px", fontWeight: "bold" } 
-                }, isMinimized ? "" : "")
-            ),
+                    React.createElement("div", { 
+                        style: { 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: "12px" 
+                        } 
+                    },
+                        React.createElement("img", {
+                            src: headerLogoUrl,
+                            alt: "Hey Trisha Logo",
+                            style: {
+                                width: "140px",
+                                height: "48px",
+                                borderRadius: "8px",
+                                objectFit: "cover",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                            },
+                            onError: (e) => {
+                                console.error('Failed to load header logo:', headerLogoUrl);
+                                e.target.style.display = "none";
+                            },
+                            onLoad: () => {
+                                console.log('Header logo loaded successfully:', headerLogoUrl);
+                            }
+                        }),
+                        React.createElement("div", null,
+                            React.createElement("div", { 
+                                style: { 
+                                    fontWeight: "700", 
+                                    fontSize: "16px",
+                                    letterSpacing: "0.3px"
+                                } 
+                            }, "Hey Trisha"),
+                            React.createElement("div", { 
+                                style: { 
+                                    fontSize: "12px", 
+                                    opacity: 0.95,
+                                    marginTop: "2px"
+                                } 
+                            }, "AI Assistant • Online")
+                        )
+                    ),
+                    React.createElement("button", {
+                        onClick: () => setIsMinimized(true),
+                        style: {
+                            background: "rgba(255,255,255,0.2)",
+                            border: "none",
+                            color: "white",
+                            fontSize: "20px",
+                            cursor: "pointer",
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            transition: "background 0.2s"
+                        },
+                        onMouseEnter: (e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)",
+                        onMouseLeave: (e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"
+                    }, "−")
+                ),
 
-            !isMinimized && React.createElement("div", { style: { height: "300px", overflowY: "auto", padding: "10px", whiteSpace: "pre-wrap" } },
+                // Messages area
+                React.createElement("div", {
+                    className: "heytrisha-chatbot-messages",
+                    style: {
+                        flex: 1,
+                        overflowY: "auto",
+                        padding: "20px",
+                        backgroundColor: "#f8f9fa",
+                        backgroundImage: "radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.08) 0%, transparent 50%)"
+                    }
+                },
                 messages.map((msg, index) =>
                     React.createElement("div", {
                         key: index,
                         style: {
                             display: "flex",
-                            alignItems: "center",
                             justifyContent: msg.sender === "bot" ? "flex-start" : "flex-end",
-                            marginBottom: "10px"
+                                marginBottom: "20px",
+                                animation: "fadeInUp 0.4s ease-out"
                         }
                     },
-                        msg.sender === "bot" ?
-                            React.createElement("img", {
-                                src: "/bookmyiyer/wp-content/plugins/heytrisha-woo/assets/img/boticon.jpg",
+                            msg.sender === "bot" && React.createElement("img", {
+                                src: botIconUrl,
                                 alt: "Bot",
-                                style: { width: "25px", height: "25px", marginRight: "8px" }
-                            })
-                            :
-                            React.createElement("img", {
-                                src: "https://img.icons8.com/ios-filled/50/000000/user.png",
-                                alt: "User",
-                                style: { width: "25px", height: "25px", marginLeft: "8px" }
+                                style: {
+                                    width: "36px",
+                                    height: "36px",
+                                    borderRadius: "50%",
+                                    marginRight: "10px",
+                                    flexShrink: 0,
+                                    objectFit: "cover",
+                                    boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)",
+                                    display: "block"
+                                },
+                                onError: (e) => {
+                                    console.error('Failed to load bot icon:', botIconUrl);
+                                    e.target.style.display = "none";
+                                },
+                                onLoad: () => {
+                                    console.log('Bot icon loaded successfully:', botIconUrl);
+                                }
                             }),
                         React.createElement("div", {
                             style: {
-                                padding: "8px",
-                                backgroundColor: msg.sender === "bot" ? "#f0f0f0" : "#cce5ff",
+                                    maxWidth: "78%",
+                                    padding: "14px 18px",
+                                    borderRadius: msg.sender === "bot" 
+                                        ? "20px 20px 20px 6px" 
+                                        : "20px 20px 6px 20px",
+                                    background: msg.sender === "bot" 
+                                        ? "white" 
+                                        : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    color: msg.sender === "bot" ? "#1f2937" : "white",
+                                    boxShadow: msg.sender === "bot" 
+                                        ? "0 2px 8px rgba(0,0,0,0.08)" 
+                                        : "0 2px 8px rgba(102, 126, 234, 0.3)",
+                                    fontSize: "14px",
+                                    lineHeight: "1.6",
+                                    wordBreak: "break-word"
+                                }
+                            },
+                                React.createElement("div", { 
+                                    style: { 
+                                        marginBottom: msg.formattedData ? "8px" : "0" 
+                                    } 
+                                }, msg.text),
+                                msg.formattedData && renderMessageContent(msg.formattedData),
+                                React.createElement("div", {
+                                    style: {
+                                        marginTop: "6px",
+                                        fontSize: "11px",
+                                        opacity: 0.7,
+                                        textAlign: "right"
+                                    }
+                                }, formatTime(msg.timestamp)),
+                                msg.requiresConfirmation && React.createElement("div", {
+                                    style: {
+                                        marginTop: "14px",
+                                        padding: "14px",
+                                        backgroundColor: msg.sender === "bot" ? "#fff3cd" : "rgba(255,255,255,0.2)",
+                                        border: "1px solid #ffc107",
+                                        borderRadius: "12px"
+                                    }
+                                },
+                                    React.createElement("div", { 
+                                        style: { 
+                                            fontWeight: "700", 
+                                            marginBottom: "12px", 
+                                            fontSize: "13px",
+                                            color: msg.sender === "bot" ? "#856404" : "white"
+                                        } 
+                                    }, "⚠️ Confirmation Required"),
+                                    React.createElement("div", { 
+                                        style: { 
+                                            display: "flex", 
+                                            gap: "10px", 
+                                            marginTop: "12px" 
+                                        } 
+                                    },
+                                        React.createElement("button", {
+                                            onClick: handleConfirm,
+                                            style: {
+                                                padding: "10px 20px",
+                                                backgroundColor: "#28a745",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: "8px",
+                                                cursor: "pointer",
+                                                fontWeight: "600",
+                                                fontSize: "13px",
+                                                transition: "all 0.2s",
+                                                boxShadow: "0 2px 4px rgba(40, 167, 69, 0.3)"
+                                            },
+                                            onMouseEnter: (e) => {
+                                                e.currentTarget.style.backgroundColor = "#218838";
+                                                e.currentTarget.style.transform = "translateY(-1px)";
+                                            },
+                                            onMouseLeave: (e) => {
+                                                e.currentTarget.style.backgroundColor = "#28a745";
+                                                e.currentTarget.style.transform = "translateY(0)";
+                                            }
+                                        }, "✓ Confirm"),
+                                        React.createElement("button", {
+                                            onClick: handleCancel,
+                                            style: {
+                                                padding: "10px 20px",
+                                                backgroundColor: "#dc3545",
+                                                color: "white",
+                                                border: "none",
                                 borderRadius: "8px",
-                                maxWidth: "70%"
-                            }
-                        }, msg.text)
+                                                cursor: "pointer",
+                                                fontWeight: "600",
+                                                fontSize: "13px",
+                                                transition: "all 0.2s",
+                                                boxShadow: "0 2px 4px rgba(220, 53, 69, 0.3)"
+                                            },
+                                            onMouseEnter: (e) => {
+                                                e.currentTarget.style.backgroundColor = "#c82333";
+                                                e.currentTarget.style.transform = "translateY(-1px)";
+                                            },
+                                            onMouseLeave: (e) => {
+                                                e.currentTarget.style.backgroundColor = "#dc3545";
+                                                e.currentTarget.style.transform = "translateY(0)";
+                                            }
+                                        }, "✗ Cancel")
+                                    )
+                                )
+                            ),
+                            msg.sender === "user" && React.createElement("div", {
+                                style: {
+                                    width: "36px",
+                                    height: "36px",
+                                    borderRadius: "50%",
+                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginLeft: "10px",
+                                    flexShrink: 0,
+                                    fontSize: "20px",
+                                    boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)"
+                                }
+                            }, "👤")
                     )
                 ),
                 isTyping && React.createElement("div", {
                     style: {
-                        fontStyle: "italic",
-                        color: "#888",
-                        textAlign: "left"
-                    }
-                }, "Typing...")
-            ),
+                            display: "flex",
+                            justifyContent: "flex-start",
+                            marginBottom: "20px",
+                            animation: "fadeInUp 0.3s ease-out"
+                        }
+                    },
+                        React.createElement("img", {
+                            src: botIconUrl,
+                            alt: "Bot",
+                            style: {
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "50%",
+                                marginRight: "10px",
+                                flexShrink: 0,
+                                objectFit: "cover",
+                                boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)",
+                                display: "block"
+                            },
+                            onError: (e) => {
+                                console.error('Failed to load bot icon:', botIconUrl);
+                                e.target.style.display = "none";
+                            },
+                            onLoad: () => {
+                                console.log('Bot icon loaded successfully:', botIconUrl);
+                            }
+                        }),
+                        React.createElement("div", {
+                            style: {
+                                padding: "14px 18px",
+                                borderRadius: "20px 20px 20px 6px",
+                                backgroundColor: "white",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                                display: "flex",
+                                gap: "6px",
+                                alignItems: "center"
+                            }
+                        },
+                            React.createElement("div", { 
+                                style: { 
+                                    width: "10px", 
+                                    height: "10px", 
+                                    borderRadius: "50%", 
+                                    backgroundColor: "#9ca3af", 
+                                    animation: "bounce 1.4s infinite" 
+                                } 
+                            }),
+                            React.createElement("div", { 
+                                style: { 
+                                    width: "10px", 
+                                    height: "10px", 
+                                    borderRadius: "50%", 
+                                    backgroundColor: "#9ca3af", 
+                                    animation: "bounce 1.4s infinite 0.2s" 
+                                } 
+                            }),
+                            React.createElement("div", { 
+                                style: { 
+                                    width: "10px", 
+                                    height: "10px", 
+                                    borderRadius: "50%", 
+                                    backgroundColor: "#9ca3af", 
+                                    animation: "bounce 1.4s infinite 0.4s" 
+                                } 
+                            })
+                        )
+                    ),
+                    React.createElement("div", { ref: messagesEndRef })
+                ),
 
-            !isMinimized && React.createElement("div", { style: { padding: "10px", borderTop: "1px solid #ddd" } },
+                // Input area
+                React.createElement("div", {
+                    style: {
+                        padding: "16px",
+                        backgroundColor: "white",
+                        borderTop: "1px solid #e5e7eb",
+                        boxShadow: "0 -2px 10px rgba(0,0,0,0.05)"
+                    }
+                },
+                    React.createElement("div", { style: { display: "flex", gap: "10px", alignItems: "center" } },
                 React.createElement("input", {
+                            ref: inputRef,
                     type: "text",
-                    id: "chat-input",
                     value: inputText,
                     onChange: (e) => setInputText(e.target.value),
-                    placeholder: "Type a message...",
-                    style: { width: "100%", padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }
+                            onKeyPress: (e) => {
+                                if (e.key === "Enter" && !pendingConfirmation && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                }
+                            },
+                            placeholder: pendingConfirmation ? "Please confirm or cancel..." : "Type a message...",
+                            disabled: !!pendingConfirmation,
+                            style: {
+                                flex: 1,
+                                padding: "14px 18px",
+                                borderRadius: "24px",
+                                border: "2px solid #e5e7eb",
+                                fontSize: "14px",
+                                outline: "none",
+                                opacity: pendingConfirmation ? 0.6 : 1,
+                                transition: "all 0.2s",
+                                backgroundColor: "#f9fafb"
+                            },
+                            onFocus: (e) => {
+                                e.target.style.borderColor = "#667eea";
+                                e.target.style.backgroundColor = "white";
+                            },
+                            onBlur: (e) => {
+                                e.target.style.borderColor = "#e5e7eb";
+                                e.target.style.backgroundColor = "#f9fafb";
+                            }
                 }),
                 React.createElement("button", { 
-                    style: { marginTop: "10px", padding: "8px", width: "100%", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" },
-                    onClick: handleSendMessage  
-                }, "Send")
+                            onClick: () => !pendingConfirmation && handleSendMessage(),
+                            disabled: !!pendingConfirmation || !inputText.trim(),
+                            style: {
+                                width: "48px",
+                                height: "48px",
+                                borderRadius: "50%",
+                                background: pendingConfirmation || !inputText.trim() 
+                                    ? "#d1d5db" 
+                                    : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                color: "white",
+                                border: "none",
+                                cursor: pendingConfirmation || !inputText.trim() ? "not-allowed" : "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "22px",
+                                transition: "all 0.2s",
+                                boxShadow: pendingConfirmation || !inputText.trim() 
+                                    ? "none" 
+                                    : "0 4px 12px rgba(102, 126, 234, 0.4)"
+                            },
+                            onMouseEnter: (e) => {
+                                if (!pendingConfirmation && inputText.trim()) {
+                                    e.currentTarget.style.transform = "scale(1.1)";
+                                }
+                            },
+                            onMouseLeave: (e) => {
+                                e.currentTarget.style.transform = "scale(1)";
+                            }
+                        }, "➤")
+                    )
+                )
             )
         );
     };
 
-    ReactDOM.createRoot(chatbotRoot).render(React.createElement(Chatbot));
+    // CSS is now loaded from external file
 
+    ReactDOM.createRoot(chatbotRoot).render(React.createElement(Chatbot));
     console.log("✅ React chatbot successfully rendered!");
 });

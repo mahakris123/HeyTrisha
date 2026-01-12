@@ -9,12 +9,17 @@ class WordPressApiService
 {
     protected $baseUrl;
     protected $authHeader;
+    protected $configService;
 
-    public function __construct()
+    public function __construct(WordPressConfigService $configService)
     {
-        $this->baseUrl = env('WORDPRESS_API_URL');
+        $this->configService = $configService;
+        $wpApiConfig = $this->configService->getWordPressApiConfig();
+        $this->baseUrl = $wpApiConfig['url'] ?? '';
+        $authUser = $wpApiConfig['user'] ?? '';
+        $authPass = $wpApiConfig['password'] ?? '';
         $this->authHeader = [
-            'Authorization' => 'Basic ' . base64_encode(env('WORDPRESS_API_USER') . ':' . env('WORDPRESS_API_PASSWORD'))
+            'Authorization' => 'Basic ' . base64_encode($authUser . ':' . $authPass)
         ];
     }
 

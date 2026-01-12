@@ -6,19 +6,11 @@
     "license": "MIT",
     "require": {
         "php": "^7.4|^8.0",
-        "brick/math": "^0.9.3",
-        "carbonphp/carbon-doctrine-types": "^2.1",
         "guzzlehttp/guzzle": "^7.2",
-        "laravel/framework": "^8.83.27",
+        "laravel/framework": "^8.83",
         "laravel/sanctum": "^2.15",
         "laravel/tinker": "^2.7",
-        "nesbot/carbon": "^2.63",
-        "ramsey/uuid": "^4.2.3",
-        "psr/log": "^1.1.4",
-        "symfony/console": "^5.4",
-        "symfony/http-kernel": "^5.4",
-        "symfony/process": "^5.4",
-        "symfony/var-dumper": "^5.4"
+        "openai-php/client": "^0.3.5"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
@@ -69,4 +61,6 @@
     "minimum-stability": "stable",
     "prefer-stable": true
 }
+
+
 

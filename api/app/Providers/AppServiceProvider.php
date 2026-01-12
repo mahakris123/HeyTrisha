@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Services\WordPressConfigService;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Don't fetch config on boot - it will be lazy-loaded when needed
+        // This prevents blocking the application startup
     }
 }

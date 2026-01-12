@@ -467,6 +467,12 @@ use Illuminate\Support\Facades\Log;
 
 class WordPressRequestGeneratorService
 {
+    protected $configService;
+
+    public function __construct(WordPressConfigService $configService)
+    {
+        $this->configService = $configService;
+    }
     // public function generateWordPressRequest($userQuery)
     // {
     //     $prompt = "
@@ -579,11 +585,11 @@ class WordPressRequestGeneratorService
         ";
 
         try {
-            // ✅ Get OpenAI API key
-            $apiKey = env('OPENAI_API_KEY');
+            // ✅ Get OpenAI API key from WordPress config
+            $apiKey = $this->configService->getOpenAIApiKey();
             if (!$apiKey) {
                 Log::error("🚨 OpenAI API Key is missing!");
-                return ['error' => 'OpenAI API Key is missing. Please set it in the .env file.'];
+                return ['error' => 'OpenAI API Key is missing. Please set it in the WordPress admin settings.'];
             }
 
             // ✅ Send request to OpenAI API
@@ -672,20 +678,21 @@ class WordPressRequestGeneratorService
                 return ['error' => 'Missing method or endpoint in API request.'];
             }
 
-            // Build final API URL
-            $apiUrl = rtrim(env('WORDPRESS_API_URL'), '/') . '/' . ltrim($apiRequest['endpoint'], '/');
+            // Build final API URL from WordPress config
+            $wpApiConfig = $this->configService->getWordPressApiConfig();
+            $apiUrl = rtrim($wpApiConfig['url'] ?? '', '/') . '/' . ltrim($apiRequest['endpoint'], '/');
             Log::info("🔍 Final API URL: $apiUrl");
 
             // Get method (POST, GET, etc.) and payload
             $method = strtoupper($apiRequest['method']); // Ensure it's uppercase
             $payload = $apiRequest['payload'] ?? []; // Default to empty array if no payload
 
-            // Authentication credentials
-            $authUser = env('WORDPRESS_API_USER');
-            $authPass = env('WORDPRESS_API_PASSWORD');
+            // Authentication credentials from WordPress config
+            $authUser = $wpApiConfig['user'] ?? '';
+            $authPass = $wpApiConfig['password'] ?? '';
             if (!$authUser || !$authPass) {
                 Log::error("🚨 WordPress API credentials are missing!");
-                return ['error' => 'WordPress API credentials are missing.'];
+                return ['error' => 'WordPress API credentials are missing. Please configure them in WordPress admin settings.'];
             }
 
             Log::info("🔍 Sending request to: $apiUrl");

@@ -5,10 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\WordPressConfigService;
 use OpenAI;
 
 class ChatbotController extends Controller
 {
+    protected $configService;
+
+    public function __construct(WordPressConfigService $configService)
+    {
+        $this->configService = $configService;
+    }
     /**
      * Fetch the database schema.
      */
@@ -51,7 +58,13 @@ Output only the SQL query. Do not include explanations, context, or any other te
 EOD;
 
         try {
-            $response = OpenAI::client(env('OPENAI_API_KEY'))->chat()->create([
+            $apiKey = $this->configService->getOpenAIApiKey();
+            if (!$apiKey) {
+                Log::error("OpenAI API Key is missing!");
+                return ['error' => 'OpenAI API Key is missing. Please configure it in WordPress admin settings.'];
+            }
+            
+            $response = OpenAI::client($apiKey)->chat()->create([
                 'model' => 'gpt-4',
                 'messages' => [
                     ['role' => 'system', 'content' => 'You are a SQL query assistant. Your task is to generate SQL queries.'],
