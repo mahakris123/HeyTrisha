@@ -187,13 +187,32 @@ class SQLGeneratorService
                   "- ⚠️⚠️⚠️ CRITICAL PRODUCT QUERY RULES:\n" .
                   "  * ✅✅✅ When user asks for 'best selling products', 'most selling product', 'top products', 'best sellers', 'top selling products', 'can you share most selling product':\n" .
                   "    → These are ANALYTICS queries - NOT sensitive personal information - MUST generate SQL\n" .
-                  "    → Use: SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT N\n" .
-                  "    → Or: SELECT product_id, product_name, SUM(quantity) AS total_sold FROM wc_order_product_lookup JOIN wp_posts ON product_id = ID GROUP BY product_id ORDER BY total_sold DESC LIMIT N\n" .
-                  "    → Example: 'best selling products' → SELECT product_id, SUM(quantity) AS total_sold FROM wp_wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 10\n" .
-                  "    → Example: 'most selling product' → SELECT product_id, SUM(quantity) AS total_sold FROM wp_wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
-                  "    → Example: 'can you share most selling product' → SELECT product_id, SUM(quantity) AS total_sold FROM wp_wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "    → ⚠️⚠️⚠️ CRITICAL: wp_wc_order_product_lookup has 'product_qty' column, NOT 'quantity' - use product_qty for quantity\n" .
+                  "    → ⚠️⚠️⚠️ CRITICAL: ALWAYS filter out invalid product IDs - use WHERE product_id > 0 to exclude product_id = 0 or NULL\n" .
+                  "    → Use: SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT N\n" .
+                  "    → Or: SELECT product_id, product_name, SUM(product_qty) AS total_sold FROM wc_order_product_lookup JOIN wp_posts ON product_id = ID WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT N\n" .
+                  "    → Example: 'best selling products' → SELECT product_id, SUM(product_qty) AS total_sold FROM wp_wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT 10\n" .
+                  "    → Example: 'most selling product' → SELECT product_id, SUM(product_qty) AS total_sold FROM wp_wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "    → Example: 'can you share most selling product' → SELECT product_id, SUM(product_qty) AS total_sold FROM wp_wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "    → Example: 'last year top selling product' → SELECT product_id, SUM(product_qty) AS total_sold FROM wp_wc_order_product_lookup WHERE product_id > 0 AND date_created >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
                   "    → Check schema for EXACT table name (might be wp_wc_order_product_lookup, wp53_5_wc_order_product_lookup, etc.)\n" .
+                  "    → ⚠️ CRITICAL: Use 'product_qty' NOT 'quantity' - the column is named 'product_qty' in wp_wc_order_product_lookup\n" .
+                  "    → ⚠️ CRITICAL: ALWAYS include WHERE product_id > 0 to exclude invalid product IDs\n" .
                   "    → Use EXACT table and column names from schema\n" .
+                  "  * ✅✅✅ When user asks for 'top selling category', 'best selling category', 'top category', 'most selling category', 'top selling categories':\n" .
+                  "    → These are ANALYTICS queries - NOT sensitive personal information - MUST generate SQL\n" .
+                  "    → ⚠️⚠️⚠️ CRITICAL: wp_wc_order_product_lookup does NOT have 'term_id' or 'category_id' column - DO NOT use term_id from this table\n" .
+                  "    → ⚠️⚠️⚠️ CRITICAL: wp_wc_order_product_lookup has 'product_qty' column, NOT 'quantity' - use product_qty for quantity\n" .
+                  "    → ⚠️⚠️⚠️ CRITICAL: For category queries, you MUST use one of these approaches (check schema for which tables exist):\n" .
+                  "      1. If wp_wc_category_lookup exists in schema: JOIN wp_wc_order_product_lookup with wp_wc_category_lookup\n" .
+                  "         → Example: SELECT cl.category_id, SUM(opl.product_qty) AS total_sold FROM wp_wc_order_product_lookup opl JOIN wp_wc_category_lookup cl ON opl.product_id = cl.product_id GROUP BY cl.category_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "         → ⚠️ CRITICAL: Use 'product_qty' NOT 'quantity' - the column is named 'product_qty' in wp_wc_order_product_lookup\n" .
+                  "      2. If wp_wc_category_lookup doesn't exist: JOIN with taxonomy tables (wp_term_relationships, wp_term_taxonomy, wp_terms)\n" .
+                  "         → Example: SELECT t.term_id, t.name AS category_name, SUM(opl.product_qty) AS total_sold FROM wp_wc_order_product_lookup opl JOIN wp_term_relationships tr ON opl.product_id = tr.object_id JOIN wp_term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'product_cat' JOIN wp_terms t ON tt.term_id = t.term_id GROUP BY t.term_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "         → ⚠️ CRITICAL: Use 'product_qty' NOT 'quantity' - the column is named 'product_qty' in wp_wc_order_product_lookup\n" .
+                  "    → ⚠️ CRITICAL: Check schema for EXACT table names and column names - use ONLY what exists in schema\n" .
+                  "    → ⚠️ CRITICAL: DO NOT use term_id directly from wp_wc_order_product_lookup - it doesn't exist there\n" .
+                  "    → ⚠️ CRITICAL: DO NOT use 'quantity' - the column is named 'product_qty' in wp_wc_order_product_lookup\n" .
                   "  * ✅✅✅ Product sales data, order analytics, revenue statistics are BUSINESS DATA - NOT sensitive - MUST generate SQL\n" .
                   "  * ⚠️ CRITICAL: Check the schema CAREFULLY for product-related tables:\n" .
                   "    - Look for tables containing 'product' or 'order_product' in the schema\n" .
@@ -235,7 +254,8 @@ class SQLGeneratorService
                   "CRITICAL ANALYSIS STEPS (YOU MUST FOLLOW THESE):\n" .
                   "1. FIRST: Read the user's request carefully and understand the INTENT:\n" .
                   "   - ✅✅✅ 'best selling products', 'most selling product', 'top products' = Analytics query - MUST generate SQL\n" .
-                  "     → Use: SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT N\n" .
+                  "     → ⚠️ CRITICAL: Use 'product_qty' NOT 'quantity' - the column is named 'product_qty' in wp_wc_order_product_lookup\n" .
+                  "     → Use: SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT N\n" .
                   "     → These are BUSINESS ANALYTICS, NOT sensitive personal information - MUST generate SQL\n" .
                   "   - ✅✅✅ 'product sales', 'order statistics', 'revenue data' = Analytics query - MUST generate SQL\n" .
                   "     → These are BUSINESS DATA, NOT sensitive - MUST generate SQL\n" .
@@ -346,16 +366,22 @@ class SQLGeneratorService
                   "- Examples:\n" .
                   "  * 'How many orders in December?' → SELECT COUNT(*) AS order_count FROM orders WHERE date >= '2024-12-01' AND date < '2025-01-01'\n" .
                   "  * 'Total sales last month' → SELECT SUM(total_sales) AS total_revenue FROM wc_order_stats WHERE date >= ... AND date < ...\n" .
-                  "  * 'Top 5 best selling products' → SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 5\n" .
-                  "  * 'Best selling products' → SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 10\n" .
-                  "  * 'Most selling product' → SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
-                  "  * 'What are the best selling products?' → SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 10\n" .
-                  "  * 'can you share most selling product?' → SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "  * ⚠️ CRITICAL: wp_wc_order_product_lookup has 'product_qty' column, NOT 'quantity' - use product_qty for quantity\n" .
+                  "  * ⚠️ CRITICAL: ALWAYS filter out invalid product IDs - use WHERE product_id > 0 to exclude product_id = 0 or NULL\n" .
+                  "  * 'Top 5 best selling products' → SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT 5\n" .
+                  "  * 'Best selling products' → SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT 10\n" .
+                  "  * 'Most selling product' → SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "  * 'What are the best selling products?' → SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT 10\n" .
+                  "  * 'can you share most selling product?' → SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "  * 'last year top selling product' → SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 AND date_created >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "  * 'top selling product last year' → SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 AND date_created >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
                   "  * Average order value' → SELECT AVG(total_sales) AS average_order_value FROM wc_order_stats\n" .
-                  "  * ⚠️ 'Most ordered product from last year' → SELECT product_id, COUNT(*) AS order_count FROM wc_order_product_lookup WHERE date_created >= '2025-01-01' AND date_created < '2026-01-01' GROUP BY product_id ORDER BY order_count DESC LIMIT 1\n" .
-                  "  * ⚠️ 'Best selling product this month' → SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup WHERE date_created >= 'YYYY-MM-01' AND date_created < 'YYYY-MM+1-01' GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
+                  "  * ⚠️ 'Most ordered product from last year' → SELECT product_id, COUNT(*) AS order_count FROM wc_order_product_lookup WHERE product_id > 0 AND date_created >= '2025-01-01' AND date_created < '2026-01-01' GROUP BY product_id ORDER BY order_count DESC LIMIT 1\n" .
+                  "  * ⚠️ 'Best selling product this month' → SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup WHERE product_id > 0 AND date_created >= 'YYYY-MM-01' AND date_created < 'YYYY-MM+1-01' GROUP BY product_id ORDER BY total_sold DESC LIMIT 1\n" .
                   "  * ⚠️ CRITICAL: For 'best selling', 'most selling', 'top selling' queries:\n" .
-                  "    → Use SUM(quantity) or COUNT(*) grouped by product_id\n" .
+                  "    → Use SUM(product_qty) or COUNT(*) grouped by product_id\n" .
+                  "    → ⚠️ CRITICAL: Use 'product_qty' NOT 'quantity' - the column is named 'product_qty' in wp_wc_order_product_lookup\n" .
+                  "    → ⚠️ CRITICAL: ALWAYS include WHERE product_id > 0 to exclude invalid product IDs (0 or NULL)\n" .
                   "    → Use ORDER BY total_sold DESC or ORDER BY order_count DESC\n" .
                   "    → Use LIMIT 1 for single product, LIMIT 10 for multiple products\n" .
                   "    → JOIN with posts table to get product names (post_title)\n" .
@@ -433,10 +459,12 @@ class SQLGeneratorService
                   "   - Authentication data (token, api_key, session_token, activation_key, reset_key)\n" .
                   "   - Usernames (user_login, login, username) - unless for analytics counts\n" .
                   "2. ✅ ALLOWED: Product sales, order analytics, revenue data (NOT sensitive):\n" .
-                  "   - Product sales: SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id (OK)\n" .
+                  "   - Product sales: SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup GROUP BY product_id (OK)\n" .
+                  "   - ⚠️ CRITICAL: Use 'product_qty' NOT 'quantity' - the column is named 'product_qty' in wp_wc_order_product_lookup\n" .
                   "   - Order statistics: SELECT * FROM wc_orders ORDER BY date_created DESC LIMIT 10 (OK)\n" .
                   "   - Revenue data: SELECT SUM(total_sales) AS revenue FROM wc_order_stats (OK)\n" .
-                  "   - Best selling products: SELECT product_id, SUM(quantity) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 10 (OK)\n" .
+                  "   - Best selling products: SELECT product_id, SUM(product_qty) AS total_sold FROM wc_order_product_lookup GROUP BY product_id ORDER BY total_sold DESC LIMIT 10 (OK)\n" .
+                  "   - ⚠️ CRITICAL: Use 'product_qty' NOT 'quantity' - the column is named 'product_qty' in wp_wc_order_product_lookup\n" .
                   "   - Counts: SELECT COUNT(*) AS total_users (OK)\n" .
                   "   - Sums: SELECT SUM(total_sales) AS revenue (OK)\n" .
                   "   - Averages: SELECT AVG(order_value) AS avg_value (OK)\n" .
@@ -933,14 +961,54 @@ class SQLGeneratorService
         
         // Method 2: Look for SQL query starting with SELECT (might have text before it)
         // Use multi-line mode and match until semicolon or end, capturing entire query including JOINs
-        // Match SELECT followed by any characters (including newlines) until FROM, then continue until semicolon or end
-        if (preg_match('/(SELECT\s+.*?FROM\s+.*?(?:\s+JOIN\s+.*?)*?(?:\s+WHERE\s+.*?)?(?:\s+ORDER\s+BY\s+.*?)?(?:\s+GROUP\s+BY\s+.*?)?(?:\s+LIMIT\s+.*?)?)(?:\s*;|\s*$)/ims', $response, $matches)) {
+        // First, try to extract everything from SELECT to semicolon or end (greedy match)
+        if (preg_match('/(SELECT\s+.*?)(?:\s*;|\s*$)/ims', $response, $matches)) {
             $extracted = trim($matches[1]);
-            // Remove trailing semicolon if present
             $extracted = rtrim($extracted, ';');
+            
+            // Ensure it has FROM clause
             if (!empty($extracted) && preg_match('/\bSELECT\b/i', $extracted) && preg_match('/\bFROM\b/i', $extracted)) {
-                Log::info("✅ Extracted SQL using SELECT-FROM pattern (length: " . strlen($extracted) . ")");
-                return $extracted;
+                // Clean up: remove any trailing explanatory text that doesn't look like SQL
+                // Keep everything that looks like SQL (contains SQL keywords, operators, etc.)
+                $lines = explode("\n", $extracted);
+                $sqlLines = [];
+                $inSQL = true;
+                
+                foreach ($lines as $line) {
+                    $lineTrimmed = trim($line);
+                    if (empty($lineTrimmed)) {
+                        continue;
+                    }
+                    
+                    // Check if this line looks like SQL (contains SQL keywords or operators)
+                    $isSQLLine = preg_match('/\b(SELECT|FROM|WHERE|ORDER|GROUP|LIMIT|JOIN|ON|AS|AND|OR|IN|LIKE|COUNT|SUM|AVG|MAX|MIN|DISTINCT|INSERT|UPDATE|DELETE)\b/i', $lineTrimmed) ||
+                                 preg_match('/[(),`=<>]/', $lineTrimmed) ||
+                                 preg_match('/^\w+\s*\.\s*\w+/', $lineTrimmed); // table.column pattern
+                    
+                    // Stop if we hit a line that doesn't look like SQL and we've already seen FROM
+                    if (!$isSQLLine && $inSQL && preg_match('/\bFROM\b/i', implode("\n", $sqlLines))) {
+                        // Check if this might be the end of SQL (like LIMIT 1 on previous line)
+                        $prevLine = end($sqlLines);
+                        if (preg_match('/\b(LIMIT|ORDER\s+BY|GROUP\s+BY)\b/i', $prevLine)) {
+                            break; // Stop here, we've reached the end
+                        }
+                    }
+                    
+                    if ($isSQLLine || $inSQL) {
+                        $sqlLines[] = $line;
+                        $inSQL = true;
+                    } else {
+                        break; // Stop at first non-SQL line
+                    }
+                }
+                
+                $extracted = implode("\n", $sqlLines);
+                $extracted = trim($extracted);
+                
+                if (!empty($extracted) && strlen($extracted) > 20) {
+                    Log::info("✅ Extracted SQL using SELECT-FROM pattern (length: " . strlen($extracted) . ")");
+                    return $extracted;
+                }
             }
         }
         

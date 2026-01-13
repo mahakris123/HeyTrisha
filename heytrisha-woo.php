@@ -3,7 +3,7 @@
  * Plugin Name: Hey Trisha - AI-Powered WordPress & WooCommerce Chatbot
  * Plugin URI: https://heytrisha.com
  * Description: AI-powered chatbot using OpenAI GPT for WordPress and WooCommerce. Natural language queries, product management, and intelligent responses.
- * Version: 22.0.0
+ * Version: 30.0.0
  * Author: HeyTrisha Team
  * Author URI: https://heytrisha.com
  * License: MIT

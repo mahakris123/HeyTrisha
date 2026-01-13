@@ -510,7 +510,30 @@ class MySQLService
             Log::error("❌ Failed SQL Query: " . $sqlQuery);
             Log::error("❌ Stack trace: " . $e->getTraceAsString());
             
-            // Return user-friendly error message
+            // Check if this is a "table doesn't exist" error - preserve actual error message for fallback logic
+            $isTableNotFound = (
+                stripos($errorMsg, "doesn't exist") !== false ||
+                stripos($errorMsg, "Base table or view not found") !== false ||
+                stripos($errorMsg, "1146") !== false || // MySQL error code for table not found
+                stripos($errorMsg, "42S02") !== false   // SQLSTATE for table not found
+            );
+            
+            // Check if this is a "column not found" error - preserve actual error message for better debugging
+            $isColumnNotFound = (
+                stripos($errorMsg, "Column not found") !== false ||
+                stripos($errorMsg, "Unknown column") !== false ||
+                stripos($errorMsg, "1054") !== false || // MySQL error code for column not found
+                stripos($errorMsg, "42S22") !== false   // SQLSTATE for column not found
+            );
+            
+            if ($isTableNotFound || $isColumnNotFound) {
+                // Return actual error message so NLPController can detect and handle these errors
+                return [
+                    "error" => $errorMsg
+                ];
+            }
+            
+            // Return user-friendly error message for other errors
             return [
                 "error" => "I encountered an issue processing your request. Please try rephrasing your question or check your database connection settings. For example, try asking 'How many orders were placed this month?' or 'What are the best selling products?'"
             ];
