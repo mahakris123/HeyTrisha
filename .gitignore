@@ -1,29 +1,10 @@
-# WordPress Plugin
-.DS_Store
-Thumbs.db
-*.log
+# WordPress Plugin .gitignore
+# For WP Plugin branch - includes WordPress plugin files, excludes API server
 
-# Laravel API
-api/.env
-api/.env.backup
-api/.env.production
-api/storage/*.key
-api/storage/logs/*.log
-api/storage/framework/cache/*
-api/storage/framework/sessions/*
-api/storage/framework/views/*
-api/bootstrap/cache/*
-!api/storage/.gitignore
-!api/storage/logs/.gitignore
-!api/storage/framework/.gitignore
-!api/storage/framework/cache/.gitignore
-!api/storage/framework/sessions/.gitignore
-!api/storage/framework/views/.gitignore
-!api/bootstrap/cache/.gitignore
-
-# Composer
-api/vendor/
-api/composer.lock
+# API Server (exclude entire directory for WordPress plugin branch)
+# The API server will be in a separate repository
+api/
+!api/.gitkeep
 
 # Node.js
 node_modules/
@@ -31,15 +12,15 @@ npm-debug.log
 yarn-error.log
 package-lock.json
 
-# React Build
+# React Build (excluded since we load from CDN)
 chatbot/
 assets/js/chatbot-react-app/node_modules/
 assets/js/chatbot-react-app/build/
-assets/js/chatbot-react-app/.env
-assets/js/chatbot-react-app/.env.local
-assets/js/chatbot-react-app/.env.development.local
-assets/js/chatbot-react-app/.env.test.local
-assets/js/chatbot-react-app/.env.production.local
+
+# Build/release directories
+releases/
+heytrisha-woo.zip
+*.zip
 
 # IDE
 .idea/
@@ -61,25 +42,19 @@ ehthumbs.db
 Thumbs.db
 Desktop.ini
 
-# Server
-api/storage/server.pid
-api/storage/server.log
+# Logs
+*.log
 
 # Test files
 test-page.html
+api/public/test*.php
+api/public/info.php
+api/public/simple-test.php
 
-# Documentation and build scripts (exclude from git)
-*.md
-*.ps1
-*.bat
-*.sh
+# Temporary/backup files
+*~
+*.bak
+*.tmp
 
-# Build/release directories
-releases/
-
-
-
-
-
-
-
+# WordPress debug
+wp-content/debug.log

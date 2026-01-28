@@ -1,19 +1,17 @@
 <?php
 /**
- * Plugin Name: Hey Trisha - AI-Powered WordPress & WooCommerce Chatbot
+ * Plugin Name: Hey Trisha
  * Plugin URI: https://heytrisha.com
  * Description: AI-powered chatbot using OpenAI GPT for WordPress and WooCommerce. Natural language queries, product management, and intelligent responses.
- * Version: 22.0.0
+ * Version: 1.0.0
  * Author: HeyTrisha Team
- * Author URI: https://heytrisha.com
+ * Author URI: https://manikandanchadran.com
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
  * Terms and Conditions: https://heytrisha.com/terms-and-conditions
- * Text Domain: heytrisha-woo
- * Domain Path: /languages
+ * Text Domain: hey-trisha
  * Requires at least: 5.0
  * Requires PHP: 7.4.3
- * Network: false
  */
 
 // Prevent direct access
@@ -313,8 +311,9 @@ if (version_compare($wp_version, HEYTRISHA_MIN_WP_VERSION, '<')) {
 // ✅ PHP version notice
 function heytrisha_php_version_notice() {
     echo '<div class="error"><p>';
+    /* translators: 1: Required PHP version, 2: Current PHP version */
     echo sprintf(
-        esc_html__('Hey Trisha requires PHP version %s or higher. You are running PHP %s. Please upgrade PHP.', 'heytrisha-woo'),
+        esc_html__('Hey Trisha requires PHP version %1$s or higher. You are running PHP %2$s. Please upgrade PHP.', 'hey-trisha'),
         HEYTRISHA_MIN_PHP_VERSION,
         PHP_VERSION
     );
@@ -325,8 +324,9 @@ function heytrisha_php_version_notice() {
 function heytrisha_wp_version_notice() {
     global $wp_version;
     echo '<div class="error"><p>';
+    /* translators: 1: Required WordPress version, 2: Current WordPress version */
     echo sprintf(
-        esc_html__('Hey Trisha requires WordPress version %s or higher. You are running WordPress %s. Please upgrade WordPress.', 'heytrisha-woo'),
+        esc_html__('Hey Trisha requires WordPress version %1$s or higher. You are running WordPress %2$s. Please upgrade WordPress.', 'hey-trisha'),
         HEYTRISHA_MIN_WP_VERSION,
         $wp_version
     );
@@ -336,10 +336,7 @@ function heytrisha_wp_version_notice() {
 // ✅ Include required files with error handling
 $required_files = array(
     'includes/class-heytrisha-database.php',
-    'includes/class-heytrisha-secure-credentials.php', // ✅ Secure credentials manager
-    'includes/class-heytrisha-security-filter.php', // ✅ Sensitive data protection
-    'includes/class-heytrisha-dependency-installer.php',
-    'includes/class-heytrisha-server-manager.php'
+    'includes/class-heytrisha-secure-credentials.php' // ✅ Secure credentials manager
 );
 
 foreach ($required_files as $file) {
@@ -349,8 +346,9 @@ foreach ($required_files as $file) {
     } else {
         add_action('admin_notices', function() use ($file) {
             echo '<div class="error"><p>';
+            /* translators: %s: Missing file name */
             echo sprintf(
-                esc_html__('Hey Trisha: Required file missing: %s. Please reinstall the plugin.', 'heytrisha-woo'),
+                esc_html__('Hey Trisha: Required file missing: %s. Please reinstall the plugin.', 'hey-trisha'),
                 esc_html($file)
             );
             echo '</p></div>';
@@ -371,15 +369,13 @@ function heytrisha_activate_plugin() {
     
     // Wrap ENTIRE activation in try-catch to prevent any fatal errors
     try {
-        // Check if classes are loaded
-        if (!class_exists('HeyTrisha_Database') || !class_exists('HeyTrisha_Secure_Credentials') || 
-            !class_exists('HeyTrisha_Dependency_Installer') || !class_exists('HeyTrisha_Server_Manager')) {
+        // Check if required classes are loaded
+        if (!class_exists('HeyTrisha_Database') || !class_exists('HeyTrisha_Secure_Credentials')) {
             error_log('Hey Trisha: Required plugin classes not loaded during activation');
             // Don't deactivate - just log and continue
-            // The plugin can still function, but some features may not work until classes are loaded
         }
         
-        // ✅ STEP 1: Create secure credentials table FIRST
+        // ✅ STEP 1: Create secure credentials table
         if (class_exists('HeyTrisha_Secure_Credentials')) {
             try {
                 HeyTrisha_Secure_Credentials::create_table();
@@ -389,77 +385,17 @@ function heytrisha_activate_plugin() {
             }
         }
         
-        // STEP 2: Create default options (only if they don't exist - for backwards compatibility)
-        add_option('heytrisha_openai_api_key', '', '', 'no');
-        add_option('heytrisha_db_host', '127.0.0.1', '', 'no');
-        add_option('heytrisha_db_port', '3306', '', 'no');
-        add_option('heytrisha_db_name', '', '', 'no');
-        add_option('heytrisha_db_user', '', '', 'no');
-        add_option('heytrisha_db_password', '', '', 'no');
-        add_option('heytrisha_wordpress_api_url', get_site_url(), '', 'no');
-        add_option('heytrisha_wordpress_api_user', '', '', 'no');
-        add_option('heytrisha_wordpress_api_password', '', '', 'no');
-        add_option('heytrisha_woocommerce_consumer_key', '', '', 'no');
-        add_option('heytrisha_woocommerce_consumer_secret', '', '', 'no');
+        // STEP 2: Create default options
+        add_option('heytrisha_api_url', 'https://api.heytrisha.com', '', 'no');
         
-        // Generate shared token if it doesn't exist
-        if (!get_option('heytrisha_shared_token')) {
-            add_option('heytrisha_shared_token', wp_generate_password(32, false, false), '', 'no');
-        }
-        
-        // ✅ STEP 3: Migrate credentials to secure table
-        if (class_exists('HeyTrisha_Secure_Credentials')) {
-            try {
-                $migrated = HeyTrisha_Secure_Credentials::migrate_from_options();
-                error_log("✅ HeyTrisha: Migrated {$migrated} credentials to secure storage");
-            } catch (Exception $e) {
-                error_log('❌ HeyTrisha: Credential migration failed - ' . $e->getMessage());
-            }
-        }
-        
-        // ✅ STEP 4: Create database tables for chat system
+        // ✅ STEP 3: Create database tables for chat system
         if (class_exists('HeyTrisha_Database')) {
             try {
                 HeyTrisha_Database::create_tables();
             } catch (Exception $e) {
                 error_log('Hey Trisha: Database table creation failed - ' . $e->getMessage());
-                // Don't fail activation, but log the error
             } catch (Throwable $e) {
                 error_log('Hey Trisha: Database table creation failed (Throwable) - ' . $e->getMessage());
-            }
-        }
-        
-        // ✅ Install Laravel and React dependencies automatically (non-blocking)
-        if (class_exists('HeyTrisha_Dependency_Installer')) {
-            try {
-                $installer = new HeyTrisha_Dependency_Installer();
-                $installation_result = $installer->install_all_dependencies();
-                
-                // Store installation result for display
-                update_option('heytrisha_installation_result', $installation_result);
-                update_option('heytrisha_installation_time', current_time('mysql'));
-            } catch (Exception $e) {
-                error_log('Hey Trisha: Dependency installation failed - ' . $e->getMessage());
-                // Don't fail activation, dependencies can be installed later
-                update_option('heytrisha_installation_result', array(
-                    'success' => false,
-                    'messages' => array('Dependency installation will be attempted later.'),
-                    'errors' => array($e->getMessage())
-                ));
-            } catch (Throwable $e) {
-                error_log('Hey Trisha: Dependency installation failed (Throwable) - ' . $e->getMessage());
-                update_option('heytrisha_installation_result', array(
-                    'success' => false,
-                    'messages' => array('Dependency installation will be attempted later.'),
-                    'errors' => array($e->getMessage())
-                ));
-            }
-        }
-        
-        // ✅ Auto-start Laravel server on activation (non-blocking, only if not shared hosting)
-        if (function_exists('heytrisha_is_shared_hosting') && !heytrisha_is_shared_hosting()) {
-            if (!wp_next_scheduled('heytrisha_start_server_on_activation')) {
-                wp_schedule_single_event(time() + 10, 'heytrisha_start_server_on_activation'); // Delay to allow dependencies to install
             }
         }
         
@@ -536,32 +472,11 @@ function heytrisha_inject_credentials_as_headers() {
     $_SERVER['HTTP_X_WORDPRESS_CURRENT_SITE_ID'] = is_multisite() ? get_current_blog_id() : '1';
 }
 
-// ✅ Async server start on activation
-function heytrisha_start_server_on_activation() {
-    $server_manager = new HeyTrisha_Server_Manager();
-    if (!$server_manager->is_server_running()) {
-        $server_manager->start_server();
-    }
-}
-add_action('heytrisha_start_server_on_activation', 'heytrisha_start_server_on_activation');
+// ✅ REMOVED: Server start on activation
+// This function has been removed as part of the thin client refactoring.
 
-// ✅ Stop server on deactivation
+// ✅ Cleanup on deactivation
 function heytrisha_deactivate_plugin() {
-    // Clear scheduled events
-    wp_clear_scheduled_hook('heytrisha_start_server_on_activation');
-    
-    // Stop server if running (only if class exists and not shared hosting)
-    if (class_exists('HeyTrisha_Server_Manager') && !heytrisha_is_shared_hosting()) {
-        try {
-            $server_manager = new HeyTrisha_Server_Manager();
-            if ($server_manager->is_server_running()) {
-                $server_manager->stop_server();
-            }
-        } catch (Exception $e) {
-            error_log('Hey Trisha: Server stop failed on deactivation - ' . $e->getMessage());
-        }
-    }
-    
     // Flush rewrite rules
     flush_rewrite_rules();
 }
@@ -577,188 +492,27 @@ function heytrisha_handle_settings_save() {
         return;
     }
 
-    $openai_api_key = isset($_POST['heytrisha_openai_api_key']) ? sanitize_text_field(wp_unslash($_POST['heytrisha_openai_api_key'])) : '';
-    $db_host = isset($_POST['heytrisha_db_host']) ? sanitize_text_field(wp_unslash($_POST['heytrisha_db_host'])) : '';
-    $db_port = isset($_POST['heytrisha_db_port']) ? sanitize_text_field(wp_unslash($_POST['heytrisha_db_port'])) : '';
-    $db_name = isset($_POST['heytrisha_db_name']) ? sanitize_text_field(wp_unslash($_POST['heytrisha_db_name'])) : '';
-    $db_user = isset($_POST['heytrisha_db_user']) ? sanitize_text_field(wp_unslash($_POST['heytrisha_db_user'])) : '';
-    $db_password = isset($_POST['heytrisha_db_password']) ? wp_unslash($_POST['heytrisha_db_password']) : '';
-    $wordpress_api_url = isset($_POST['heytrisha_wordpress_api_url']) ? esc_url_raw(wp_unslash($_POST['heytrisha_wordpress_api_url'])) : '';
-    $wordpress_api_user = isset($_POST['heytrisha_wordpress_api_user']) ? sanitize_text_field(wp_unslash($_POST['heytrisha_wordpress_api_user'])) : '';
-    $wordpress_api_password = isset($_POST['heytrisha_wordpress_api_password']) ? wp_unslash($_POST['heytrisha_wordpress_api_password']) : '';
-    $woocommerce_consumer_key = isset($_POST['heytrisha_woocommerce_consumer_key']) ? sanitize_text_field(wp_unslash($_POST['heytrisha_woocommerce_consumer_key'])) : '';
-    $woocommerce_consumer_secret = isset($_POST['heytrisha_woocommerce_consumer_secret']) ? wp_unslash($_POST['heytrisha_woocommerce_consumer_secret']) : '';
-    $shared_token = isset($_POST['heytrisha_shared_token']) ? sanitize_text_field(wp_unslash($_POST['heytrisha_shared_token'])) : '';
+    // ✅ Get external API settings
+    $api_url = isset($_POST['heytrisha_api_url']) ? esc_url_raw(wp_unslash($_POST['heytrisha_api_url'])) : '';
+    $api_key = isset($_POST['heytrisha_api_key']) ? wp_unslash($_POST['heytrisha_api_key']) : '';
 
-    // ✅ Store sensitive credentials in secure encrypted table
-    if (!empty($openai_api_key)) {
-        heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_OPENAI_API, $openai_api_key);
-    }
-    if (!empty($db_password)) {
-        heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_DB_PASSWORD, $db_password);
-    }
-    if (!empty($wordpress_api_password)) {
-        heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_WP_API_PASSWORD, $wordpress_api_password);
-    }
-    if (!empty($woocommerce_consumer_secret)) {
-        heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_WC_CONSUMER_SECRET, $woocommerce_consumer_secret);
-    }
-    if (!empty($shared_token)) {
-        heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_SHARED_TOKEN, $shared_token);
+    // ✅ Store API URL in wp_options
+    if (!empty($api_url)) {
+        update_option('heytrisha_api_url', $api_url);
     }
     
-    // ✅ Store non-sensitive settings in wp_options
-    update_option('heytrisha_db_host', $db_host);
-    update_option('heytrisha_db_port', $db_port);
-    update_option('heytrisha_db_name', $db_name);
-    update_option('heytrisha_db_user', $db_user);
-    update_option('heytrisha_wordpress_api_url', $wordpress_api_url);
-    update_option('heytrisha_wordpress_api_user', $wordpress_api_user);
-    update_option('heytrisha_woocommerce_consumer_key', $woocommerce_consumer_key);
+    // ✅ Store API key in secure encrypted table
+    if (!empty($api_key)) {
+        heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_API_TOKEN, $api_key);
+    }
 
     add_settings_error('heytrisha_settings', 'settings_updated', 'Settings saved.', 'updated');
 }
 add_action('admin_init', 'heytrisha_handle_settings_save');
 
-// ✅ Server Management AJAX Handlers
-function heytrisha_ajax_start_server() {
-    check_ajax_referer('heytrisha_server_action', 'nonce');
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(['message' => 'Unauthorized']);
-    }
-    
-    $server_manager = new HeyTrisha_Server_Manager();
-    $result = $server_manager->start_server();
-    
-    if ($result['success']) {
-        wp_send_json_success($result);
-    } else {
-        wp_send_json_error($result);
-    }
-}
-add_action('wp_ajax_heytrisha_start_server', 'heytrisha_ajax_start_server');
-
-function heytrisha_ajax_stop_server() {
-    check_ajax_referer('heytrisha_server_action', 'nonce');
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(['message' => 'Unauthorized']);
-    }
-    
-    $server_manager = new HeyTrisha_Server_Manager();
-    $result = $server_manager->stop_server();
-    
-    wp_send_json_success($result);
-}
-add_action('wp_ajax_heytrisha_stop_server', 'heytrisha_ajax_stop_server');
-
-function heytrisha_ajax_restart_server() {
-    check_ajax_referer('heytrisha_server_action', 'nonce');
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(['message' => 'Unauthorized']);
-    }
-    
-    $server_manager = new HeyTrisha_Server_Manager();
-    $result = $server_manager->restart_server();
-    
-    if ($result['success']) {
-        wp_send_json_success($result);
-    } else {
-        wp_send_json_error($result);
-    }
-}
-add_action('wp_ajax_heytrisha_restart_server', 'heytrisha_ajax_restart_server');
-
-function heytrisha_ajax_reinstall_dependencies() {
-    check_ajax_referer('heytrisha_server_action', 'nonce');
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(['message' => 'Unauthorized']);
-    }
-    
-    $installer = new HeyTrisha_Dependency_Installer();
-    $result = $installer->install_all_dependencies();
-    
-    // Store installation result
-    update_option('heytrisha_installation_result', $result);
-    update_option('heytrisha_installation_time', current_time('mysql'));
-    
-    if ($result['success']) {
-        wp_send_json_success([
-            'message' => 'Dependencies installed successfully!',
-            'details' => $result
-        ]);
-    } else {
-        wp_send_json_error([
-            'message' => 'Dependencies installation completed with errors. Check the status below.',
-            'details' => $result
-        ]);
-    }
-}
-add_action('wp_ajax_heytrisha_reinstall_dependencies', 'heytrisha_ajax_reinstall_dependencies');
-
-// ✅ Generate Laravel APP_KEY via AJAX (for shared hosting)
-function heytrisha_ajax_generate_app_key() {
-    check_ajax_referer('heytrisha_server_action', 'nonce');
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(['message' => 'Unauthorized']);
-    }
-    
-    $api_path = HEYTRISHA_PLUGIN_DIR . 'api';
-    $env_file = $api_path . '/.env';
-    $env_example = $api_path . '/.env.example';
-    
-    // Create .env if it doesn't exist
-    if (!file_exists($env_file) && file_exists($env_example)) {
-        copy($env_example, $env_file);
-    }
-    
-    if (!file_exists($env_file)) {
-        wp_send_json_error(['message' => '.env file not found and could not be created']);
-    }
-    
-    $env_content = file_get_contents($env_file);
-    
-    // Check if APP_KEY already exists and is valid
-    if (preg_match('/^APP_KEY=base64:[A-Za-z0-9+\/]+={0,2}$/m', $env_content)) {
-        wp_send_json_success(['message' => 'APP_KEY already exists and is valid']);
-    }
-    
-    // Generate a random 32-byte key and encode it as base64
-    $key = 'base64:' . base64_encode(random_bytes(32));
-    
-    // Replace or add APP_KEY
-    if (preg_match('/^APP_KEY=.*$/m', $env_content)) {
-        $env_content = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY=' . $key, $env_content);
-    } else {
-        if (preg_match('/^(APP_NAME=.*)$/m', $env_content)) {
-            $env_content = preg_replace('/^(APP_NAME=.*)$/m', '$1' . "\n" . 'APP_KEY=' . $key, $env_content);
-        } else {
-            $env_content = 'APP_KEY=' . $key . "\n" . $env_content;
-        }
-    }
-    
-    if (file_put_contents($env_file, $env_content) !== false) {
-        wp_send_json_success(['message' => 'APP_KEY generated successfully!']);
-    } else {
-        wp_send_json_error(['message' => 'Failed to write APP_KEY to .env file. Check file permissions.']);
-    }
-}
-add_action('wp_ajax_heytrisha_generate_app_key', 'heytrisha_ajax_generate_app_key');
-
-// ✅ Auto-start server on admin page load (if not running) - Non-blocking
-function heytrisha_auto_start_server() {
-    if (!current_user_can('manage_options')) {
-        return;
-    }
-    
-    // Only start on settings page, and do it asynchronously via JavaScript
-    // This prevents blocking the page load
-    $screen = get_current_screen();
-    if ($screen && $screen->id === 'toplevel_page_heytrisha-chatbot-settings') {
-        // Server will be started via AJAX call to avoid blocking
-        // This is handled in the settings page JavaScript
-    }
-}
-add_action('admin_head', 'heytrisha_auto_start_server');
+// ✅ REMOVED: Server Management AJAX Handlers
+// These handlers have been removed as part of the thin client refactoring.
+// The plugin now uses an external API service instead of a local Laravel server.
 
 // ✅ Render admin settings page
 function heytrisha_render_settings_page() {
@@ -768,199 +522,173 @@ function heytrisha_render_settings_page() {
 
     settings_errors('heytrisha_settings');
 
-    // ✅ Get credentials - secure ones from encrypted storage, others from wp_options
-    $openai_api_key = heytrisha_get_credential(HeyTrisha_Secure_Credentials::KEY_OPENAI_API, 'heytrisha_openai_api_key', '');
-    $db_host = get_option('heytrisha_db_host', '127.0.0.1');
-    $db_port = get_option('heytrisha_db_port', '3306');
-    $db_name = get_option('heytrisha_db_name', '');
-    $db_user = get_option('heytrisha_db_user', '');
-    $db_password = heytrisha_get_credential(HeyTrisha_Secure_Credentials::KEY_DB_PASSWORD, 'heytrisha_db_password', '');
-    $wordpress_api_url = get_option('heytrisha_wordpress_api_url', get_site_url());
-    $wordpress_api_user = get_option('heytrisha_wordpress_api_user', '');
-    $wordpress_api_password = heytrisha_get_credential(HeyTrisha_Secure_Credentials::KEY_WP_API_PASSWORD, 'heytrisha_wordpress_api_password', '');
-    $woocommerce_consumer_key = get_option('heytrisha_woocommerce_consumer_key', '');
-    $woocommerce_consumer_secret = heytrisha_get_credential(HeyTrisha_Secure_Credentials::KEY_WC_CONSUMER_SECRET, 'heytrisha_woocommerce_consumer_secret', '');
-    $shared_token = heytrisha_get_credential(HeyTrisha_Secure_Credentials::KEY_SHARED_TOKEN, 'heytrisha_shared_token', '');
+    // ✅ Get external API settings
+    $api_url = get_option('heytrisha_api_url', 'https://api.heytrisha.com');
+    $api_key = heytrisha_get_credential(HeyTrisha_Secure_Credentials::KEY_API_TOKEN, 'heytrisha_api_key', '');
 
     echo '<div class="wrap">';
     echo '<h1>HeyTrisha Chatbot Settings</h1>';
     echo '<form method="post">';
     wp_nonce_field('heytrisha_save_settings', 'heytrisha_settings_nonce');
 
-    echo '<h2>OpenAI</h2>';
+    echo '<h2>External API Configuration</h2>';
+    echo '<p>This plugin connects to the HeyTrisha external service to process natural language queries. Configure your API credentials below.</p>';
     echo '<table class="form-table"><tbody>';
-    echo '<tr><th scope="row"><label for="heytrisha_openai_api_key">OpenAI API Key</label></th>';
-    echo '<td><input type="password" id="heytrisha_openai_api_key" name="heytrisha_openai_api_key" value="' . esc_attr($openai_api_key) . '" class="regular-text" autocomplete="off" /></td></tr>';
+    echo '<tr><th scope="row"><label for="heytrisha_api_url">API URL</label></th>';
+    echo '<td><input type="url" id="heytrisha_api_url" name="heytrisha_api_url" value="' . esc_attr($api_url) . '" class="regular-text" placeholder="https://api.heytrisha.com" /></td></tr>';
+    echo '<tr><th scope="row"><label for="heytrisha_api_key">API Key</label></th>';
+    echo '<td><input type="password" id="heytrisha_api_key" name="heytrisha_api_key" value="' . esc_attr($api_key) . '" class="regular-text" autocomplete="off" /></td></tr>';
+    echo '<tr><th scope="row"><label>Get API Key</label></th>';
+    echo '<td><p class="description">Get your API key from <a href="https://heytrisha.com" target="_blank">heytrisha.com</a></p></td></tr>';
     echo '</tbody></table>';
 
-    echo '<h2>Database</h2>';
-    echo '<table class="form-table"><tbody>';
-    echo '<tr><th scope="row"><label for="heytrisha_db_host">Host</label></th>';
-    echo '<td><input type="text" id="heytrisha_db_host" name="heytrisha_db_host" value="' . esc_attr($db_host) . '" class="regular-text" /></td></tr>';
-    echo '<tr><th scope="row"><label for="heytrisha_db_port">Port</label></th>';
-    echo '<td><input type="text" id="heytrisha_db_port" name="heytrisha_db_port" value="' . esc_attr($db_port) . '" class="regular-text" /></td></tr>';
-    echo '<tr><th scope="row"><label for="heytrisha_db_name">Database Name</label></th>';
-    echo '<td><input type="text" id="heytrisha_db_name" name="heytrisha_db_name" value="' . esc_attr($db_name) . '" class="regular-text" /></td></tr>';
-    echo '<tr><th scope="row"><label for="heytrisha_db_user">Username</label></th>';
-    echo '<td><input type="text" id="heytrisha_db_user" name="heytrisha_db_user" value="' . esc_attr($db_user) . '" class="regular-text" /></td></tr>';
-    echo '<tr><th scope="row"><label for="heytrisha_db_password">Password</label></th>';
-    echo '<td><input type="password" id="heytrisha_db_password" name="heytrisha_db_password" value="' . esc_attr($db_password) . '" class="regular-text" autocomplete="new-password" /></td></tr>';
-    echo '</tbody></table>';
-
-    echo '<h2>WordPress API</h2>';
-    echo '<p>WordPress REST API credentials for the Laravel backend to interact with WordPress.</p>';
-    echo '<table class="form-table"><tbody>';
-    echo '<tr><th scope="row"><label for="heytrisha_wordpress_api_url">WordPress API URL</label></th>';
-    echo '<td><input type="url" id="heytrisha_wordpress_api_url" name="heytrisha_wordpress_api_url" value="' . esc_attr($wordpress_api_url) . '" class="regular-text" placeholder="' . esc_attr(get_site_url()) . '" /></td></tr>';
-    echo '<tr><th scope="row"><label for="heytrisha_wordpress_api_user">WordPress API Username</label></th>';
-    echo '<td><input type="text" id="heytrisha_wordpress_api_user" name="heytrisha_wordpress_api_user" value="' . esc_attr($wordpress_api_user) . '" class="regular-text" /></td></tr>';
-    echo '<tr><th scope="row"><label for="heytrisha_wordpress_api_password">WordPress API Password</label></th>';
-    echo '<td><input type="password" id="heytrisha_wordpress_api_password" name="heytrisha_wordpress_api_password" value="' . esc_attr($wordpress_api_password) . '" class="regular-text" autocomplete="new-password" /></td></tr>';
-    echo '<tr><th scope="row"><label>Application Password</label></th>';
-    echo '<td><p class="description">Generate an Application Password from <a href="' . admin_url('profile.php') . '#application-passwords" target="_blank">Users → Your Profile → Application Passwords</a></p></td></tr>';
-    echo '</tbody></table>';
-
-    echo '<h2>WooCommerce</h2>';
-    echo '<p>WooCommerce REST API credentials for the chatbot to access your store data.</p>';
-    echo '<table class="form-table"><tbody>';
-    echo '<tr><th scope="row"><label for="heytrisha_woocommerce_consumer_key">WooCommerce Consumer Key</label></th>';
-    echo '<td><input type="text" id="heytrisha_woocommerce_consumer_key" name="heytrisha_woocommerce_consumer_key" value="' . esc_attr($woocommerce_consumer_key) . '" class="regular-text" /></td></tr>';
-    echo '<tr><th scope="row"><label for="heytrisha_woocommerce_consumer_secret">WooCommerce Consumer Secret</label></th>';
-    echo '<td><input type="password" id="heytrisha_woocommerce_consumer_secret" name="heytrisha_woocommerce_consumer_secret" value="' . esc_attr($woocommerce_consumer_secret) . '" class="regular-text" autocomplete="new-password" /></td></tr>';
-    echo '<tr><th scope="row"><label>Generate API Keys</label></th>';
-    echo '<td><p class="description">Generate WooCommerce API keys from <a href="' . admin_url('admin.php?page=wc-settings&tab=advanced&section=keys') . '" target="_blank">WooCommerce → Settings → Advanced → REST API</a></p></td></tr>';
-    echo '</tbody></table>';
-
-    echo '<h2>Integration</h2>';
-    echo '<p>This token allows your Laravel API to fetch credentials from the WordPress site securely.</p>';
-    echo '<table class="form-table"><tbody>';
-    echo '<tr><th scope="row"><label for="heytrisha_shared_token">Shared Access Token</label></th>';
-    echo '<td><input type="text" id="heytrisha_shared_token" name="heytrisha_shared_token" value="' . esc_attr($shared_token) . '" class="regular-text" /></td></tr>';
-    echo '</tbody></table>';
-
-    // ✅ Dependency Installation Status
-    $installer = new HeyTrisha_Dependency_Installer();
-    $install_status = $installer->get_installation_status();
-    $installation_result = get_option('heytrisha_installation_result', null);
-    
-    echo '<h2>Dependency Installation Status</h2>';
-    echo '<div class="heytrisha-install-status" style="background: #f0f0f1; padding: 15px; border-radius: 4px; margin-bottom: 15px;">';
-    
-    if ($installation_result) {
-        echo '<h3 style="margin-top: 0;">Last Installation Result</h3>';
-        if ($installation_result['success']) {
-            echo '<p style="color: #00a32a; font-weight: bold;">✓ Installation completed successfully</p>';
-        } else {
-            echo '<p style="color: #d63638; font-weight: bold;">⚠ Installation completed with some warnings</p>';
-        }
-        
-        if (!empty($installation_result['messages'])) {
-            echo '<ul style="margin-left: 20px;">';
-            foreach ($installation_result['messages'] as $message) {
-                echo '<li>' . esc_html($message) . '</li>';
-            }
-            echo '</ul>';
-        }
-        
-        if (!empty($installation_result['errors'])) {
-            echo '<h4 style="color: #d63638;">Errors:</h4>';
-            echo '<ul style="margin-left: 20px; color: #d63638;">';
-            foreach ($installation_result['errors'] as $error) {
-                echo '<li>' . esc_html($error) . '</li>';
-            }
-            echo '</ul>';
-        }
-    }
-    
-    echo '<h3>Current Status</h3>';
-    echo '<ul style="margin-left: 20px;">';
-    echo '<li><strong>Laravel Dependencies:</strong> ' . ($install_status['laravel_installed'] ? '<span style="color: #00a32a;">✓ Installed</span>' : '<span style="color: #d63638;">✗ Not Installed</span>') . '</li>';
-    $laravel_key_exists = $install_status['laravel_key_exists'];
-    echo '<li><strong>Laravel App Key:</strong> ' . ($laravel_key_exists ? '<span style="color: #00a32a;">✓ Generated</span>' : '<span style="color: #d63638;">✗ Not Generated</span>');
-    if (!$laravel_key_exists) {
-        echo ' <button type="button" class="button button-secondary" onclick="heytrishaGenerateAppKey()" style="margin-left: 10px;">🔑 Generate APP_KEY</button>';
-    }
-    echo '</li>';
-    echo '<li><strong>React Dependencies:</strong> ' . ($install_status['react_installed'] ? '<span style="color: #00a32a;">✓ Installed</span>' : '<span style="color: #d63638;">✗ Not Installed (Optional - React loaded from CDN)</span>') . '</li>';
-    echo '<li><strong>Composer Available:</strong> ' . ($install_status['composer_available'] ? '<span style="color: #00a32a;">✓ Yes</span>' : '<span style="color: #d63638;">✗ No</span>') . '</li>';
-    echo '<li><strong>npm Available:</strong> ' . ($install_status['npm_available'] ? '<span style="color: #00a32a;">✓ Yes</span>' : '<span style="color: #d63638;">✗ No (Optional)</span>') . '</li>';
-    echo '</ul>';
-    
-    echo '<p>';
-    echo '<button type="button" class="button button-secondary" onclick="heytrishaReinstallDependencies()">🔄 Reinstall Dependencies</button>';
-    if (!$laravel_key_exists) {
-        echo ' <button type="button" class="button button-primary" onclick="heytrishaGenerateAppKey()">🔑 Generate APP_KEY</button>';
-    }
-    echo '</p>';
-    
-    echo '</div>';
-
-    // ✅ API Configuration Section
-    $is_shared_hosting = heytrisha_is_shared_hosting();
-    $api_url = heytrisha_get_api_url();
-    
-    echo '<h2>API Configuration</h2>';
     echo '<div class="notice notice-info inline" style="margin: 15px 0; padding: 12px;">';
-    
-    if ($is_shared_hosting) {
-        echo '<p><strong>🌐 Environment:</strong> Shared Hosting (Automatic)</p>';
-        echo '<p><strong>API URL:</strong> <code>' . esc_html($api_url) . '/api/query</code></p>';
-        echo '<p class="description">✅ The chatbot works automatically via your web server. No server management needed!</p>';
-        
-        // Add diagnostic links (using WordPress REST API)
-        $health_url = rest_url('heytrisha/v1/api/health');
-        $diagnostic_url = rest_url('heytrisha/v1/api/diagnostic');
-        
-        echo '<p><strong>🔍 Diagnostic Tools:</strong></p>';
-        echo '<ul style="margin-left: 20px;">';
-        echo '<li><a href="' . esc_url($health_url) . '" target="_blank">Health Check</a> - Check Laravel status</li>';
-        echo '<li><a href="' . esc_url($diagnostic_url) . '" target="_blank">Full Diagnostic</a> - Detailed system check</li>';
-        echo '</ul>';
-    } else {
-        echo '<p><strong>💻 Environment:</strong> Development/VPS</p>';
-        echo '<p><strong>API URL:</strong> <code>' . esc_html($api_url) . '/api/query</code></p>';
-        echo '<p class="description">⚠️  For development: Run <code>cd api && php artisan serve</code> in your terminal.</p>';
-    }
-    
+    echo '<p><strong>ℹ️ External Service Notice:</strong></p>';
+    echo '<p>This plugin connects to an external service (HeyTrisha API) to process natural language queries. User queries and limited schema metadata may be transmitted. No passwords or payment data are sent.</p>';
     echo '</div>';
-    
-    echo '<script>
-    function heytrishaReinstallDependencies() {
-        if (!confirm("This will reinstall all Laravel and React dependencies. This may take a few minutes. Continue?")) return;
-        jQuery.post(ajaxurl, {
-            action: "heytrisha_reinstall_dependencies",
-            nonce: "' . wp_create_nonce('heytrisha_server_action') . '"
-        }, function(response) {
-            if (response.success) {
-                alert("Dependencies installation completed! Check the status below.");
-                location.reload();
-            } else {
-                alert("Error: " + (response.data.message || "Unknown error"));
-            }
-        });
-    }
-    function heytrishaGenerateAppKey() {
-        if (!confirm("This will generate a new Laravel APP_KEY. Continue?")) return;
-        jQuery.post(ajaxurl, {
-            action: "heytrisha_generate_app_key",
-            nonce: "' . wp_create_nonce('heytrisha_server_action') . '"
-        }, function(response) {
-            if (response.success) {
-                alert("APP_KEY generated successfully! The page will reload.");
-                location.reload();
-            } else {
-                alert("Error: " + (response.data && response.data.message ? response.data.message : "Failed to generate APP_KEY"));
-            }
-        }).fail(function() {
-            alert("Error: Failed to communicate with server. Please check your connection.");
-        });
-    }
-    </script>';
 
     submit_button('Save Changes');
     echo '</form>';
     echo '</div>';
 }
+
+// ✅ Handle onboarding registration
+function heytrisha_handle_onboarding_registration() {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    if (!isset($_POST['heytrisha_register']) || !isset($_POST['heytrisha_onboarding_nonce']) || 
+        !wp_verify_nonce($_POST['heytrisha_onboarding_nonce'], 'heytrisha_onboarding')) {
+        return;
+    }
+
+    $openai_key = isset($_POST['heytrisha_openai_key']) ? wp_unslash($_POST['heytrisha_openai_key']) : '';
+    $site_url = isset($_POST['heytrisha_site_url']) ? esc_url_raw(wp_unslash($_POST['heytrisha_site_url'])) : get_site_url();
+    $admin_email = isset($_POST['heytrisha_admin_email']) ? sanitize_email(wp_unslash($_POST['heytrisha_admin_email'])) : get_option('admin_email');
+    $api_server_url = isset($_POST['heytrisha_api_server_url']) ? esc_url_raw(wp_unslash($_POST['heytrisha_api_server_url'])) : 'https://api.heytrisha.com';
+
+    if (empty($openai_key)) {
+        add_settings_error('heytrisha_settings', 'openai_key_required', 'OpenAI API key is required.', 'error');
+        return;
+    }
+
+    // Save OpenAI key locally (encrypted)
+    heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_OPENAI_API, $openai_key);
+
+    // Register with API server
+    $response = wp_remote_post(rtrim($api_server_url, '/') . '/api/register', array(
+        'headers' => array(
+            'Content-Type' => 'application/json',
+        ),
+        'body' => wp_json_encode(array(
+            'site_url' => $site_url,
+            'openai_key' => $openai_key,
+            'email' => $admin_email,
+            'wordpress_version' => get_bloginfo('version'),
+            'woocommerce_version' => defined('WC_VERSION') ? WC_VERSION : 'not_installed',
+            'plugin_version' => '1.0.0',
+        )),
+        'timeout' => 30,
+        'sslverify' => true,
+    ));
+
+    if (is_wp_error($response)) {
+        add_settings_error('heytrisha_settings', 'registration_failed', 'Registration failed: ' . $response->get_error_message(), 'error');
+        return;
+    }
+
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+
+    if (!$data || !isset($data['success']) || !$data['success']) {
+        $error_msg = isset($data['message']) ? $data['message'] : 'Unknown error occurred';
+        add_settings_error('heytrisha_settings', 'registration_failed', 'Registration failed: ' . $error_msg, 'error');
+        return;
+    }
+
+    if (!isset($data['api_key'])) {
+        add_settings_error('heytrisha_settings', 'no_api_key', 'Registration succeeded but no API key was returned.', 'error');
+        return;
+    }
+
+    // Save API key and server URL
+    heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_API_TOKEN, $data['api_key']);
+    update_option('heytrisha_api_url', $api_server_url);
+    update_option('heytrisha_onboarding_complete', true);
+
+    add_settings_error('heytrisha_settings', 'registration_success', '✅ Registration successful! HeyTrisha is now active.', 'updated');
+}
+add_action('admin_init', 'heytrisha_handle_onboarding_registration');
+
+// ✅ Handle settings update (after onboarding)
+function heytrisha_handle_settings_update() {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    if (!isset($_POST['heytrisha_save_settings']) || !isset($_POST['heytrisha_settings_nonce']) || 
+        !wp_verify_nonce($_POST['heytrisha_settings_nonce'], 'heytrisha_save_settings')) {
+        return;
+    }
+
+    $openai_key = isset($_POST['heytrisha_openai_key']) ? wp_unslash($_POST['heytrisha_openai_key']) : '';
+    $api_url = isset($_POST['heytrisha_api_url']) ? esc_url_raw(wp_unslash($_POST['heytrisha_api_url'])) : '';
+
+    // Update locally
+    if (!empty($openai_key)) {
+        heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_OPENAI_API, $openai_key);
+    }
+    if (!empty($api_url)) {
+        update_option('heytrisha_api_url', $api_url);
+    }
+
+    // Sync with API server
+    $site_api_key = heytrisha_get_credential(HeyTrisha_Secure_Credentials::KEY_API_TOKEN, 'heytrisha_api_key', '');
+    if (!empty($site_api_key)) {
+        $response = wp_remote_post(rtrim($api_url, '/') . '/api/config', array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $site_api_key,
+                'Content-Type' => 'application/json',
+            ),
+            'body' => wp_json_encode(array(
+                'openai_key' => $openai_key,
+            )),
+            'timeout' => 30,
+            'sslverify' => true,
+        ));
+
+        if (is_wp_error($response)) {
+            add_settings_error('heytrisha_settings', 'sync_failed', 'Settings saved locally but failed to sync with API server: ' . $response->get_error_message(), 'warning');
+        } else {
+            add_settings_error('heytrisha_settings', 'settings_updated', 'Settings saved and synced successfully.', 'updated');
+        }
+    } else {
+        add_settings_error('heytrisha_settings', 'settings_updated', 'Settings saved locally.', 'updated');
+    }
+}
+add_action('admin_init', 'heytrisha_handle_settings_update');
+
+// ✅ Handle reset onboarding
+function heytrisha_handle_reset_onboarding() {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    if (!isset($_POST['heytrisha_reset_onboarding']) || !isset($_POST['heytrisha_reset_nonce']) || 
+        !wp_verify_nonce($_POST['heytrisha_reset_nonce'], 'heytrisha_reset_onboarding')) {
+        return;
+    }
+
+    // Clear onboarding status
+    delete_option('heytrisha_onboarding_complete');
+
+    // Optionally clear API key (user can decide)
+    // heytrisha_set_credential(HeyTrisha_Secure_Credentials::KEY_API_TOKEN, '');
+
+    add_settings_error('heytrisha_settings', 'reset_success', 'Onboarding reset. You can now register again.', 'updated');
+}
+add_action('admin_init', 'heytrisha_handle_reset_onboarding');
 
 // ✅ Render Terms and Conditions Page
 function heytrisha_render_terms_page() {
@@ -1166,16 +894,65 @@ function heytrisha_render_archive_page() {
     echo '</div>';
 }
 
-// ✅ Get API URL based on environment
+// ✅ Get external API URL from settings
 function heytrisha_get_api_url() {
-    // Always use WordPress REST API endpoint for security
-    // WordPress blocks direct PHP execution in plugin directories
-    // Route: /wp-json/heytrisha/v1/api/{endpoint}
-    return rest_url('heytrisha/v1/api/');
+    return get_option('heytrisha_api_url', 'https://api.heytrisha.com');
 }
 
-// ✅ Proxy function to execute Laravel API internally through WordPress
-function heytrisha_proxy_laravel_api($request) {
+/**
+ * Get database schema for API
+ * Returns compact schema format: table_name => [column1, column2, ...]
+ * 
+ * @return array Database schema with table names as keys and column arrays as values
+ */
+function heytrisha_get_database_schema() {
+    global $wpdb;
+    
+    $schema = array();
+    
+    try {
+        // Get all tables from WordPress database
+        $tables = $wpdb->get_results('SHOW TABLES', ARRAY_N);
+        
+        if (empty($tables)) {
+            return array();
+        }
+        
+        foreach ($tables as $table) {
+            $table_name = $table[0];
+            
+            // Get columns for this table
+            $columns = $wpdb->get_results($wpdb->prepare("DESCRIBE `%s`", $table_name), ARRAY_A);
+            
+            if (empty($columns)) {
+                continue;
+            }
+            
+            $column_names = array();
+            foreach ($columns as $column) {
+                $column_names[] = $column['Field'];
+            }
+            
+            $schema[$table_name] = $column_names;
+        }
+        
+        return $schema;
+        
+    } catch (Exception $e) {
+        error_log('Hey Trisha: Error fetching database schema - ' . $e->getMessage());
+        return array();
+    } catch (Throwable $e) {
+        error_log('Hey Trisha: Error fetching database schema (Throwable) - ' . $e->getMessage());
+        return array();
+    }
+}
+
+// ✅ REMOVED: Laravel proxy function - now using external API
+// This function has been removed as part of the thin client refactoring
+// All API calls now go directly to external HeyTrisha engine
+function heytrisha_proxy_laravel_api_removed($request) {
+    // This function is deprecated and should not be called
+    return new WP_Error('deprecated', 'Laravel proxy has been removed. Plugin now uses external API.', array('status' => 500));
     // ✅ Handle both WP_REST_Request (from REST API) and stdClass (from AJAX)
     if (is_a($request, 'WP_REST_Request')) {
         // REST API request - use get_param()
@@ -1781,35 +1558,19 @@ function heytrisha_register_rest_routes() {
 }
 add_action('rest_api_init', 'heytrisha_register_rest_routes');
 
-// ✅ Admin-Ajax handler for Laravel API proxy (replaces REST API)
-// This hides the endpoint from public view in Network tab
+// ✅ Admin-Ajax handler for external API proxy
+// This is a thin client that forwards requests to external HeyTrisha engine
 function heytrisha_ajax_query_handler() {
-    // CRITICAL: Suppress errors and start output buffering
-    $original_error_reporting = error_reporting();
-    $original_display_errors = ini_get('display_errors');
-    
-    // Suppress all error display
-    error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED & ~E_USER_NOTICE & ~E_USER_WARNING & ~E_USER_DEPRECATED);
-    ini_set('display_errors', '0');
-    ini_set('display_startup_errors', '0');
-    
-    // Custom error handler
-    set_error_handler(function($errno, $errstr, $errfile, $errline) {
-        if ($errno === E_NOTICE || $errno === E_WARNING || $errno === E_DEPRECATED || 
-            $errno === E_USER_NOTICE || $errno === E_USER_WARNING || $errno === E_USER_DEPRECATED) {
-            return true;
-        }
-        return false;
-    }, E_ALL);
-    
-    // Clean existing buffers and start fresh
-    while (ob_get_level() > 0) {
-        ob_end_clean();
+    // Check user permissions
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => 'Unauthorized. Administrator access required.'
+        ));
+        return;
     }
-    ob_start();
     
     try {
-        // ✅ Get the request body (prioritize POST data for admin-ajax.php, fallback to JSON)
+        // Get the request body
         $request_data = array();
         
         // First try POST data (standard WordPress AJAX)
@@ -1824,7 +1585,7 @@ function heytrisha_ajax_query_handler() {
                 }
             }
         } else {
-            // Fallback: Try JSON body (for backward compatibility)
+            // Fallback: Try JSON body
             $json_body = file_get_contents('php://input');
             $decoded = json_decode($json_body, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
@@ -1832,97 +1593,96 @@ function heytrisha_ajax_query_handler() {
             }
         }
         
-        // ✅ Validate query exists before proceeding
+        // Validate query exists
         if (empty($request_data['query']) || !is_string($request_data['query']) || trim($request_data['query']) === '') {
-            // Log the issue
-            error_log("❌ AJAX Handler - Empty or invalid query received");
-            error_log("❌ AJAX Handler - _POST: " . json_encode($_POST));
-            error_log("❌ AJAX Handler - request_data: " . json_encode($request_data));
-            error_log("❌ AJAX Handler - php://input: " . file_get_contents('php://input'));
-            
-            // Return error response
-            wp_send_json(array(
-                'success' => false,
+            wp_send_json_error(array(
                 'message' => 'Please provide a valid query.'
             ));
             return;
         }
         
-        // ✅ Log successful query reception
-        error_log("✅ AJAX Handler - Query received: '{$request_data['query']}'");
+        // Sanitize input
+        $query = sanitize_text_field($request_data['query']);
+        $confirmed = isset($request_data['confirmed']) ? filter_var($request_data['confirmed'], FILTER_VALIDATE_BOOLEAN) : false;
+        $confirmation_data = isset($request_data['confirmation_data']) ? $request_data['confirmation_data'] : null;
         
-        // Create a WP_REST_Request compatible object
-        $request = new stdClass();
-        $request->endpoint = isset($request_data['endpoint']) ? sanitize_text_field($request_data['endpoint']) : 'query';
+        // Get external API URL and API key
+        $api_url = get_option('heytrisha_api_url', 'https://api.heytrisha.com');
+        $api_key = heytrisha_get_credential(HeyTrisha_Secure_Credentials::KEY_API_TOKEN, 'heytrisha_api_key', '');
         
-        // Store the full request body (contains query, confirmed, confirmation_data, etc.)
-        $request->body = $request_data;
-        
-        // For compatibility with the proxy function, add these as direct properties
-        // ✅ Ensure query is properly set (don't use isset, use direct assignment)
-        $request->query = isset($request_data['query']) ? $request_data['query'] : '';
-        if (isset($request_data['confirmed'])) {
-            $request->confirmed = filter_var($request_data['confirmed'], FILTER_VALIDATE_BOOLEAN);
-        }
-        if (isset($request_data['confirmation_data'])) {
-            $request->confirmation_data = $request_data['confirmation_data'];
-        }
-        
-        // ✅ Final validation - ensure query is set
-        if (empty($request->query)) {
-            error_log("❌ AJAX Handler - Query not set in request object!");
-            error_log("❌ AJAX Handler - request_data: " . json_encode($request_data));
-            wp_send_json(array(
-                'success' => false,
-                'message' => 'Query parameter is missing.'
+        if (empty($api_url) || empty($api_key)) {
+            wp_send_json_error(array(
+                'message' => 'HeyTrisha API is not configured. Please configure the API URL and API key in settings.'
             ));
             return;
         }
         
-        // Inject WordPress configuration as HTTP headers for Laravel
-        heytrisha_inject_credentials_as_headers();
+        // Get database schema for API
+        $schema = heytrisha_get_database_schema();
         
-        // Call the proxy function
-        $result = heytrisha_proxy_laravel_api($request);
+        // Prepare request body for external API
+        $request_body = array(
+            'question' => $query,
+            'site' => get_site_url(),
+            'context' => 'woocommerce',
+            'schema' => $schema // Send database schema
+        );
         
-        // Clean all buffers
-        while (ob_get_level() > 0) {
-            ob_end_clean();
+        if ($confirmed) {
+            $request_body['confirmed'] = true;
         }
         
-        // Restore error reporting
-        error_reporting($original_error_reporting);
-        ini_set('display_errors', $original_display_errors);
-        restore_error_handler();
+        if ($confirmation_data !== null) {
+            $request_body['confirmation_data'] = $confirmation_data;
+        }
         
-        // Return JSON response
-        wp_send_json($result);
+        // Make request to external API
+        $response = wp_remote_post(rtrim($api_url, '/') . '/api/query', array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $api_key,
+                'Content-Type' => 'application/json'
+            ),
+            'body' => wp_json_encode($request_body),
+            'timeout' => 60,
+            'sslverify' => true
+        ));
+        
+        // Handle response
+        if (is_wp_error($response)) {
+            wp_send_json_error(array(
+                'message' => 'Failed to connect to HeyTrisha API: ' . $response->get_error_message()
+            ));
+            return;
+        }
+        
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        
+        if ($response_code !== 200) {
+            wp_send_json_error(array(
+                'message' => 'HeyTrisha API returned an error (HTTP ' . $response_code . ')',
+                'details' => $response_body
+            ));
+            return;
+        }
+        
+        $decoded_response = json_decode($response_body, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            wp_send_json_error(array(
+                'message' => 'Invalid response from HeyTrisha API'
+            ));
+            return;
+        }
+        
+        // Return the response
+        wp_send_json($decoded_response);
         
     } catch (Exception $e) {
-        // Clean buffers on error
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        
-        // Restore error reporting
-        error_reporting($original_error_reporting);
-        ini_set('display_errors', $original_display_errors);
-        restore_error_handler();
-        
         wp_send_json_error(array(
             'message' => 'Request failed: ' . $e->getMessage()
         ));
     } catch (Throwable $e) {
-        // Clean buffers on error
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        
-        // Restore error reporting
-        error_reporting($original_error_reporting);
-        ini_set('display_errors', $original_display_errors);
-        restore_error_handler();
-        
         wp_send_json_error(array(
             'message' => 'Request failed: ' . $e->getMessage()
         ));
@@ -1938,6 +1698,16 @@ function heytrisha_register_chat_rest_routes() {
     // Ensure database class is loaded
     if (!class_exists('HeyTrisha_Database')) {
         require_once HEYTRISHA_PLUGIN_DIR . 'includes/class-heytrisha-database.php';
+    }
+    
+    // Ensure SQL validator is loaded
+    if (!class_exists('HeyTrisha_SQL_Validator')) {
+        require_once HEYTRISHA_PLUGIN_DIR . 'includes/class-heytrisha-sql-validator.php';
+    }
+    
+    // Ensure REST API handler is loaded
+    if (!class_exists('HeyTrisha_REST_API')) {
+        require_once HEYTRISHA_PLUGIN_DIR . 'includes/class-heytrisha-rest-api.php';
     }
     
     // Ensure tables exist
@@ -1979,6 +1749,17 @@ function heytrisha_register_chat_rest_routes() {
                 return new WP_Error('not_found', 'Chat not found.', array('status' => 404));
             }
             $messages = $db->get_messages($chat_id);
+            // Decode metadata JSON strings to objects for frontend
+            if ($messages && is_array($messages)) {
+                foreach ($messages as &$msg) {
+                    if (isset($msg->metadata) && is_string($msg->metadata)) {
+                        $decoded = json_decode($msg->metadata, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $msg->metadata = $decoded;
+                        }
+                    }
+                }
+            }
             $chat->messages = $messages;
             return rest_ensure_response($chat);
         },
@@ -2098,7 +1879,15 @@ function heytrisha_register_chat_rest_routes() {
             $message_id = $db->add_message($chat_id, $role, $content, $metadata);
             if ($message_id) {
                 $messages = $db->get_messages($chat_id);
-                return rest_ensure_response(end($messages));
+                $lastMessage = end($messages);
+                // Decode metadata JSON string to object for frontend
+                if ($lastMessage && isset($lastMessage->metadata) && is_string($lastMessage->metadata)) {
+                    $decoded = json_decode($lastMessage->metadata, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $lastMessage->metadata = $decoded;
+                    }
+                }
+                return rest_ensure_response($lastMessage);
             }
             return new WP_Error('message_failed', 'Failed to add message.', array('status' => 500));
         },

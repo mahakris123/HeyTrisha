@@ -41,44 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }, [isMinimized]);
         
-        // Auto-start server when chatbot component mounts
-        React.useEffect(() => {
-            // Check if server is running and start if needed (only for non-shared hosting)
-            const isSharedHosting = (window.heytrishaConfig && window.heytrishaConfig.isSharedHosting) || false;
-            if (!isSharedHosting) {
-                startServerIfNeeded();
-            }
-        }, []);
-        
-        // Start server if not running
-        const startServerIfNeeded = async () => {
-            try {
-                const ajaxUrl = (window.heytrishaConfig && window.heytrishaConfig.ajaxurl) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
-                const serverNonce = (window.heytrishaConfig && window.heytrishaConfig.serverNonce) || '';
-                
-                const response = await fetch(ajaxUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        action: 'heytrisha_start_server',
-                        nonce: serverNonce
-                    })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    console.log('✅ Server started successfully');
-                    return true;
-                } else {
-                    console.log('ℹ️ Server status:', result.data?.message || 'Unknown');
-                    return false;
-                }
-            } catch (error) {
-                console.warn('⚠️ Could not check/start server:', error);
-                return false;
-            }
-        };
+        // REMOVED: Server auto-start code
+        // Plugin now uses external API, no local server needed
         
         // Create or load chat when chatbot opens
         React.useEffect(() => {
@@ -151,23 +115,50 @@ document.addEventListener("DOMContentLoaded", function () {
                         };
                         
                         // Extract formattedData from metadata if it exists
-                        if (msg.metadata && msg.metadata.formattedData) {
-                            messageObj.formattedData = msg.metadata.formattedData;
-                        } else if (msg.metadata && typeof msg.metadata === 'object') {
-                            // Try to extract formattedData from metadata object
+                        // Metadata is stored as JSON string in database, so we need to parse it first
+                        let parsedMetadata = null;
+                        if (msg.metadata) {
                             try {
-                                // Check if metadata has formattedData
-                                if (msg.metadata.formattedData) {
-                                    messageObj.formattedData = typeof msg.metadata.formattedData === 'string' 
-                                        ? JSON.parse(msg.metadata.formattedData) 
-                                        : msg.metadata.formattedData;
+                                // If metadata is a string, parse it
+                                if (typeof msg.metadata === 'string') {
+                                    parsedMetadata = JSON.parse(msg.metadata);
+                                } else if (typeof msg.metadata === 'object') {
+                                    // Already an object
+                                    parsedMetadata = msg.metadata;
                                 }
                             } catch (e) {
-                                // Ignore parsing errors
+                                console.warn('Failed to parse metadata:', e);
+                                parsedMetadata = null;
                             }
                         }
                         
-                        // If content contains JSON at the end, try to extract it
+                        // Now extract formattedData from parsed metadata
+                        if (parsedMetadata && parsedMetadata.formattedData) {
+                            // formattedData might also be a JSON string, so parse it if needed
+                            if (typeof parsedMetadata.formattedData === 'string') {
+                                try {
+                                    messageObj.formattedData = JSON.parse(parsedMetadata.formattedData);
+                                } catch (e) {
+                                    console.warn('Failed to parse formattedData:', e);
+                                    messageObj.formattedData = parsedMetadata.formattedData;
+                                }
+                            } else {
+                                messageObj.formattedData = parsedMetadata.formattedData;
+                            }
+                        } else if (parsedMetadata && parsedMetadata.data) {
+                            // If metadata has data but no formattedData, try to reconstruct formattedData
+                            // This handles cases where data was saved but formattedData wasn't
+                            try {
+                                const data = Array.isArray(parsedMetadata.data) ? parsedMetadata.data : [parsedMetadata.data];
+                                if (data.length > 0) {
+                                    messageObj.formattedData = formatResponse(data);
+                                }
+                            } catch (e) {
+                                console.warn('Failed to reconstruct formattedData from data:', e);
+                            }
+                        }
+                        
+                        // If content contains JSON at the end, try to extract it (fallback)
                         if (!messageObj.formattedData && msg.content && msg.content.includes('{')) {
                             try {
                                 const jsonMatch = msg.content.match(/\{[\s\S]*\}$/);
@@ -667,19 +658,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     // Check if it's a connection error (server not ready)
                     if (fetchError.message && (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError'))) {
-                        // Try to start the server automatically
-                        const isSharedHosting = (window.heytrishaConfig && window.heytrishaConfig.isSharedHosting) || false;
-                        if (!isSharedHosting) {
-                            console.log('🔄 Connection failed, attempting to start server...');
-                            try {
-                                const serverStarted = await startServerIfNeeded();
-                                if (serverStarted) {
-                                    // Wait a moment for server to start
-                                    await new Promise(resolve => setTimeout(resolve, 2000));
-                                    // Retry the request once with correct endpoint
-                                    console.log('🔄 Retrying request after server start...');
-                                    const retryController = new AbortController();
-                                    const retryTimeoutId = setTimeout(() => retryController.abort(), 20000);
+                        // REMOVED: Server start retry logic
+                        // Plugin now uses external API, no local server needed
+                        console.log('⚠️ Connection failed. Please check your API configuration in settings.');
                                     
                                     try {
                                         // ✅ Retry with admin-ajax.php (form-encoded)

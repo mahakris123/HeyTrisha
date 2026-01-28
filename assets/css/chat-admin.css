@@ -393,3 +393,23 @@
     flex: 1;
 }
 
+/* Footer Styles */
+.heytrisha-chat-footer {
+    padding: 12px 24px;
+    background: #343541;
+    border-top: 1px solid #4d4d4f;
+    text-align: center;
+}
+
+.heytrisha-footer-link {
+    color: #8e8ea0;
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.2s;
+}
+
+.heytrisha-footer-link:hover {
+    color: #10a37f;
+    text-decoration: underline;
+}
+

@@ -24,6 +24,7 @@ class HeyTrisha_Secure_Credentials {
     const KEY_WP_API_PASSWORD = 'wordpress_api_password';
     const KEY_WC_CONSUMER_SECRET = 'woocommerce_consumer_secret';
     const KEY_SHARED_TOKEN = 'shared_token';
+    const KEY_API_TOKEN = 'api_token';
     
     public static function get_instance() {
         if (self::$instance === null) {
@@ -275,5 +276,7 @@ class HeyTrisha_Secure_Credentials {
         return true;
     }
 }
+
+
 
 

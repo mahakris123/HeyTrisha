@@ -59,20 +59,48 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Process messages to extract formattedData from metadata
                     const processedMessages = (chat.messages || []).map(msg => {
                         const processedMsg = { ...msg };
-                        // Extract formattedData from metadata
-                        if (msg.metadata && msg.metadata.formattedData) {
-                            processedMsg.formattedData = msg.metadata.formattedData;
-                        } else if (msg.metadata && typeof msg.metadata === 'object') {
-                            // Try to extract from metadata object
-                            if (msg.metadata.data && Array.isArray(msg.metadata.data)) {
+                        
+                        // Parse metadata if it's a JSON string
+                        let parsedMetadata = null;
+                        if (msg.metadata) {
+                            try {
+                                if (typeof msg.metadata === 'string') {
+                                    parsedMetadata = JSON.parse(msg.metadata);
+                                } else if (typeof msg.metadata === 'object') {
+                                    parsedMetadata = msg.metadata;
+                                }
+                            } catch (e) {
+                                console.warn('Failed to parse metadata:', e);
+                                parsedMetadata = null;
+                            }
+                        }
+                        
+                        // Extract formattedData from parsed metadata
+                        if (parsedMetadata && parsedMetadata.formattedData) {
+                            // formattedData might also be a JSON string
+                            if (typeof parsedMetadata.formattedData === 'string') {
+                                try {
+                                    processedMsg.formattedData = JSON.parse(parsedMetadata.formattedData);
+                                } catch (e) {
+                                    console.warn('Failed to parse formattedData:', e);
+                                    processedMsg.formattedData = parsedMetadata.formattedData;
+                                }
+                            } else {
+                                processedMsg.formattedData = parsedMetadata.formattedData;
+                            }
+                        } else if (parsedMetadata && parsedMetadata.data) {
+                            // If metadata has data but no formattedData, reconstruct formattedData
+                            const data = Array.isArray(parsedMetadata.data) ? parsedMetadata.data : [parsedMetadata.data];
+                            if (data.length > 0) {
                                 processedMsg.formattedData = {
                                     type: "table",
-                                    content: msg.metadata.data,
-                                    summary: `Found ${msg.metadata.data.length} result${msg.metadata.data.length > 1 ? 's' : ''}`
+                                    content: data,
+                                    summary: `Found ${data.length} result${data.length > 1 ? 's' : ''}`
                                 };
                             }
                         }
-                        // If content contains JSON, try to extract it
+                        
+                        // If content contains JSON, try to extract it (fallback)
                         if (!processedMsg.formattedData && msg.content && msg.content.includes('{')) {
                             try {
                                 const jsonMatch = msg.content.match(/\{[\s\S]*\}$/);
@@ -453,7 +481,6 @@ document.addEventListener("DOMContentLoaded", function () {
                                             lineHeight: "1.6"
                                         }
                                     }, msg.content),
-                                    msg.formattedData && renderFormattedData(msg.formattedData),
                                     msg.formattedData && renderFormattedData(msg.formattedData)
                                 )
                             )
@@ -488,6 +515,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             disabled: !inputText.trim() || isTyping
                         }, "→")
                     )
+                ),
+                React.createElement("div", { className: "heytrisha-chat-footer" },
+                    React.createElement("a", {
+                        href: "https://heytrisha.com",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        className: "heytrisha-footer-link"
+                    }, "HeyTrisha")
                 )
                 )
             )

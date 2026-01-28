@@ -1,8 +1,8 @@
-=== Hey Trisha - AI-Powered WordPress & WooCommerce Chatbot ===
+=== Hey Trisha ===
 Contributors: mahakris123
 Tags: chatbot, ai, openai, woocommerce, nlp, artificial intelligence
 Requires at least: 5.0
-Tested up to: 6.4
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: MIT
@@ -151,9 +151,13 @@ The AI will provide a helpful response and suggest what kinds of questions you c
 = 1.0.0 =
 Initial release of Hey Trisha chatbot plugin.
 
+== External Services ==
+
+This plugin connects to an external service (HeyTrisha API) to process natural language queries. User queries and limited schema metadata may be transmitted. No passwords or payment data are sent.
+
 == Privacy Policy ==
 
-This plugin sends database schema information and user queries to OpenAI's API for processing. No actual database content is sent unless specifically queried. Your OpenAI API key and database credentials are stored locally in your WordPress database and never transmitted to third parties except OpenAI for query processing.
+This plugin connects to the HeyTrisha external service to process natural language queries. User queries and limited schema metadata may be transmitted to the HeyTrisha API for processing. No passwords or payment data are sent. Your API key is stored securely in your WordPress database and is only used to authenticate requests to the HeyTrisha service.
 
 == Support ==
 
@@ -170,6 +174,8 @@ Built with Laravel, React, and OpenAI
 == License ==
 
 This plugin is licensed under the MIT License. See LICENSE file for details.
+
+
 
 
 
